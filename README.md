@@ -15,12 +15,11 @@ Here is an example of your `migrate` command:
 
 ```typescript
 import SQLUp from "sql-up";
-
 import { getDbClient, stopDbClient } from "./client";
 
 SQLUp({
   schema: "public",
-  folder: "./db/migrations",
+  folder: "./migrations",
   table: "migrations",
   parameters: async ({ schema }) => ({ schema }),
   query: async (query) => {
@@ -90,7 +89,7 @@ import { getDbClient, stopDbClient } from "./client";
 
 const migrations = await runMigrations({
   schema: "public",
-  folder: "./db/migrations",
+  folder: "./migrations",
   table: "migrations",
   parameters: async ({ schema }) => ({ schema }),
   query: async (query) => {
