@@ -2,10 +2,9 @@ import fs from "fs/promises";
 import path from "path";
 
 import {
-  MigrationsContext,
-  Options,
   MigrationRow,
   Parameters,
+  RunContext,
   RX_MIGRATION_FILES,
 } from "./types";
 
@@ -13,12 +12,11 @@ import {
   getMigrationsPath,
   createMigrationError,
   instanceOfNodeError,
+  getTable,
 } from "./helpers";
 
-type Context = MigrationsContext & Pick<Options, "parameters" | "query">;
-
 export async function runMigrations(
-  context: Context,
+  context: RunContext,
   onMigrationApplied?: (fileName: string) => void | Promise<void>
 ): Promise<number> {
   await ensureSchemaAndMigrationTable(context);
@@ -43,7 +41,7 @@ export async function runMigrations(
 }
 
 async function runMigration(
-  { schema, table, query }: Context,
+  { schema, table, query, now }: RunContext,
   migrationFile: string,
   data: Parameters,
   saveMigration = true
@@ -55,8 +53,8 @@ async function runMigration(
     if (saveMigration) {
       const fileName = path.basename(migrationFile);
       await query(`insert into
-        ${schema}.${table}
-        values ('${fileName}', now());
+        ${getTable(schema, table)}
+        values ('${fileName}', ${now ? now : "now()"});
       `);
     }
   } catch (e) {
@@ -81,7 +79,7 @@ async function loadMigration(
   );
 }
 
-async function getNewMigrations(context: Context) {
+async function getNewMigrations(context: RunContext) {
   const [migrations, fsFilesRunOnce, filesToRunAlways] = await Promise.all([
     getCompletedMigrations(context),
     getMigrationsFiles(context),
@@ -97,7 +95,7 @@ async function getNewMigrations(context: Context) {
 }
 
 async function getMigrationsFiles(
-  context: Context,
+  context: RunContext,
   runAlways = false
 ): Promise<string[]> {
   const migrationsPath = getMigrationsPath({ ...context, runAlways });
@@ -124,21 +122,31 @@ async function getCompletedMigrations({
   query,
   schema,
   table,
-}: Context): Promise<MigrationRow[]> {
-  const migrations = (await query(`
-    select * from ${schema}.${table}
+}: RunContext): Promise<MigrationRow[]> {
+  const migrations = (await query(
+    `
+    select * from ${getTable(schema, table)}
     order by name, created_at;
-  `)) as MigrationRow[];
+  `,
+    true
+  )) as MigrationRow[];
 
-  return migrations;
+  return migrations ?? [];
 }
 
-async function ensureSchemaAndMigrationTable(context: Context) {
+async function ensureSchemaAndMigrationTable(context: RunContext) {
   await ensureSchemaExists(context);
   await ensureMigrationsTableExists(context);
 }
 
-async function ensureSchemaExists({ query, schema }: Context): Promise<void> {
+async function ensureSchemaExists({
+  query,
+  schema,
+}: RunContext): Promise<void> {
+  if (schema === null) {
+    return;
+  }
+
   await query(`create schema if not exists ${schema};`);
 }
 
@@ -146,8 +154,8 @@ async function ensureMigrationsTableExists({
   query,
   schema,
   table,
-}: Context): Promise<void> {
-  await query(`create table if not exists ${schema}.${table} (
+}: RunContext): Promise<void> {
+  await query(`create table if not exists ${getTable(schema, table)} (
     name text not null,
     created_at timestamp not null
   );`);

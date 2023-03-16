@@ -5,6 +5,8 @@
 
 Simple SQL migration tool.
 
+Tested with SQLite, PostgreSQL, Snowflake
+
 # Install
 
 `npm i sql-up`
@@ -74,13 +76,14 @@ All migrations are split into two categories:
 - schema, string ("public") - schema
 - folder, string ("./migrations") - folder with migrations files
 - table, string ("migrations") - the name of the table to keep the history of migration
+- now, string ("now()") - the sql function for getting current timestamp
 - _parameters_, async function that should resolve into a data object that will be applied to every migration file
 - _query_, async function that runs SQL
 - _end_, async function that will be run after all is done. The perfect place to close your connections
 
 ## API: runMigrations
 
-`runMigrations` take all the same arguments except `finally`. Returns a number of applied migrations.
+`runMigrations` take all the same arguments except `end`. Returns a number of applied migrations.
 
 ```ts
 import { runMigrations } from "sql-up";

@@ -4,7 +4,7 @@ import { RunOnce, RunAlways, MigrationError } from "./types";
 
 interface GetMigrationsPathOptions {
   folder: string;
-  schema: string;
+  schema: string | null;
   runAlways?: boolean;
 }
 
@@ -13,7 +13,19 @@ export function getMigrationsPath({
   schema,
   runAlways,
 }: GetMigrationsPathOptions): string {
+  if (schema === null) {
+    return path.join(".", folder, runAlways ? RunAlways : RunOnce);
+  }
+
   return path.join(".", folder, schema, runAlways ? RunAlways : RunOnce);
+}
+
+export function getTable(schema: string | null, table: string): string {
+  if (schema === null) {
+    return table;
+  }
+
+  return `${schema}.${table}`;
 }
 
 export function createMigrationError(file: string, e: Error): MigrationError {

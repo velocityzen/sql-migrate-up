@@ -9,7 +9,7 @@ export function getCLIOptions({ table, folder, schema }: Options) {
   const schemaOption = new Option(
     "--schema <string>",
     "schema to migrate"
-  ).default(schema ?? MIGRATIONS_SCHEMA);
+  ).default(schema === undefined ? MIGRATIONS_SCHEMA : schema);
 
   const tableOption = new Option(
     "--table <string>",

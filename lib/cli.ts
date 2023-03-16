@@ -20,7 +20,11 @@ export function runCli(options: Options) {
     .addOption(folderOption)
     .action(async (context: MigrationsContext) => {
       try {
-        console.info(`Appling migrations to ${context.schema}`);
+        console.info(
+          `Appling migrations ${
+            context.schema !== null ? `to ${context.schema}` : ""
+          }`
+        );
         const runnedMigrationsNumber = await runMigrations(
           { ...context, parameters: options.parameters, query: options.query },
           (name) => {
