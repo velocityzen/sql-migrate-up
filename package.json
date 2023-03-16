@@ -1,5 +1,5 @@
 {
-  "name": "sql-up",
+  "name": "sql-up-migrate",
   "version": "0.0.1",
   "description": "Simple SQL Migration tool",
   "main": "build/index.js",
