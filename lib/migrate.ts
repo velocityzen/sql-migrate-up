@@ -5,7 +5,7 @@ import {
   MigrationsContext,
   Options,
   MigrationRow,
-  MigrationData,
+  Parameters,
   RX_MIGRATION_FILES,
 } from "./types";
 
@@ -15,7 +15,7 @@ import {
   instanceOfNodeError,
 } from "./helpers";
 
-type Context = MigrationsContext & Pick<Options, "applyData" | "runSQL">;
+type Context = MigrationsContext & Pick<Options, "parameters" | "query">;
 
 export async function runMigrations(
   context: Context,
@@ -23,7 +23,7 @@ export async function runMigrations(
 ): Promise<number> {
   await ensureSchemaAndMigrationTable(context);
   const { filesToRunOnce, filesToRunAlways } = await getNewMigrations(context);
-  const migrationData = await context.applyData(context);
+  const migrationData = await context.parameters(context);
 
   for await (const migrationFile of filesToRunOnce) {
     await runMigration(context, migrationFile, migrationData);
@@ -43,18 +43,18 @@ export async function runMigrations(
 }
 
 async function runMigration(
-  { schema, table, runSQL }: Context,
+  { schema, table, query }: Context,
   migrationFile: string,
-  data: MigrationData,
+  data: Parameters,
   saveMigration = true
 ) {
   try {
     const migrationSql = await loadMigration(migrationFile, data);
-    await runSQL(migrationSql);
+    await query(migrationSql);
 
     if (saveMigration) {
       const fileName = path.basename(migrationFile);
-      await runSQL(`insert into
+      await query(`insert into
         ${schema}.${table}
         values ('${fileName}', now());
       `);
@@ -71,7 +71,7 @@ async function runMigration(
 
 async function loadMigration(
   migrationFile: string,
-  data: MigrationData
+  data: Parameters
 ): Promise<string> {
   const templateSql = await fs.readFile(migrationFile, "utf8");
 
@@ -121,11 +121,11 @@ async function getMigrationsFiles(
 }
 
 async function getCompletedMigrations({
-  runSQL,
+  query,
   schema,
   table,
 }: Context): Promise<MigrationRow[]> {
-  const migrations = (await runSQL(`
+  const migrations = (await query(`
     select * from ${schema}.${table}
     order by name, created_at;
   `)) as MigrationRow[];
@@ -133,24 +133,21 @@ async function getCompletedMigrations({
   return migrations;
 }
 
-/**
- * Ensures that the schema you're trying to run migrations on and the history table exist.
- * */
 async function ensureSchemaAndMigrationTable(context: Context) {
   await ensureSchemaExists(context);
   await ensureMigrationsTableExists(context);
 }
 
-async function ensureSchemaExists({ runSQL, schema }: Context): Promise<void> {
-  await runSQL(`create schema if not exists ${schema};`);
+async function ensureSchemaExists({ query, schema }: Context): Promise<void> {
+  await query(`create schema if not exists ${schema};`);
 }
 
 async function ensureMigrationsTableExists({
-  runSQL,
+  query,
   schema,
   table,
 }: Context): Promise<void> {
-  await runSQL(`create table if not exists ${schema}.${table} (
+  await query(`create table if not exists ${schema}.${table} (
     name text not null,
     created_at timestamp not null
   );`);

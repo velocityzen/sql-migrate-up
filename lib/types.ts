@@ -3,9 +3,7 @@ export const RunAlways = "run-awlays";
 
 export const RX_MIGRATION_FILES = /^\d+_.*\.sql$/;
 
-export type MigrationData = Record<string, string | undefined>;
-
-export type ApplyData = (context: MigrationsContext) => Promise<MigrationData>;
+export type Parameters = Record<string, string | undefined>;
 
 export interface Options {
   name?: string;
@@ -13,9 +11,9 @@ export interface Options {
   table?: string;
   folder?: string;
   schema?: string;
-  applyData: ApplyData;
-  runSQL: (sql: string) => Promise<unknown>;
-  finally: () => Promise<void>;
+  parameters: (context: MigrationsContext) => Promise<Parameters>;
+  query: (sql: string) => Promise<unknown>;
+  end: () => Promise<void>;
 }
 
 export type MigrationsContext = {

@@ -22,12 +22,12 @@ SQLUp({
   schema: "public",
   folder: "./db/migrations",
   table: "migrations",
-  applyData: async ({ schema }) => ({ schema }),
-  runSQL: async (sql) => {
+  parameters: async ({ schema }) => ({ schema }),
+  query: async (query) => {
     const client = getDbClient();
-    return client(sql);
+    return client(query);
   },
-  finally: stopDbClient,
+  end: stopDbClient,
 });
 ```
 
@@ -75,9 +75,9 @@ All migrations are split into two categories:
 - schema, string ("public") - schema
 - folder, string ("./migrations") - folder with migrations files
 - table, string ("migrations") - the name of the table to keep the history of migration
-- _applyData_, async function that should resolve into a data object that will be applied to every migration file
-- _runSQL_, async function that runs SQL
-- _finally_, async function that will be run after all is done. The perfect place to close your connections
+- _parameters_, async function that should resolve into a data object that will be applied to every migration file
+- _query_, async function that runs SQL
+- _end_, async function that will be run after all is done. The perfect place to close your connections
 
 ## API: runMigrations
 
@@ -92,10 +92,10 @@ const migrations = await runMigrations({
   schema: "public",
   folder: "./db/migrations",
   table: "migrations",
-  applyData: async ({ schema }) => ({ schema }),
-  runSQL: async (sql) => {
+  parameters: async ({ schema }) => ({ schema }),
+  query: async (query) => {
     const client = getDbClient();
-    return client(sql);
+    return client(query);
   },
 });
 ```

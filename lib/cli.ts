@@ -22,7 +22,7 @@ export function runCli(options: Options) {
       try {
         console.info(`Appling migrations to ${context.schema}`);
         const runnedMigrationsNumber = await runMigrations(
-          { ...context, applyData: options.applyData, runSQL: options.runSQL },
+          { ...context, parameters: options.parameters, query: options.query },
           (name) => {
             console.info(`> ${name}`);
           }
@@ -34,9 +34,9 @@ export function runCli(options: Options) {
             `${runnedMigrationsNumber} migrations applied. DB is up to date.`
           );
         }
-        await options.finally();
+        await options.end();
       } catch (error) {
-        await options.finally();
+        await options.end();
         console.error("Failed to run migrations:", error);
         process.exit(1);
       }
@@ -54,9 +54,9 @@ export function runCli(options: Options) {
       try {
         const newMigrationName = await createMigration(context, name.join(" "));
         console.info(`New migration has been created at: ${newMigrationName}`);
-        await options.finally();
+        await options.end();
       } catch (error) {
-        await options.finally();
+        await options.end();
         console.error("Failed to create migration:", error);
         process.exit(1);
       }
