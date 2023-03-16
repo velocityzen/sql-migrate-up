@@ -1,18 +1,20 @@
 import path from "path";
 
-import { RunOnce, RunAlways, MigrationError } from "./types";
+import { RunOnce, RunAlways, MigrationError, MigrationsContext } from "./types";
 
-interface GetMigrationsPathOptions {
-  folder: string;
-  schema: string | null;
+type GetMigrationsPathOptions = Pick<MigrationsContext, "schema" | "folder"> & {
   runAlways?: boolean;
-}
+};
 
 export function getMigrationsPath({
   folder,
   schema,
   runAlways,
 }: GetMigrationsPathOptions): string {
+  if (typeof folder === "function") {
+    return path.join(".", folder(schema), runAlways ? RunAlways : RunOnce);
+  }
+
   if (schema === null) {
     return path.join(".", folder, runAlways ? RunAlways : RunOnce);
   }

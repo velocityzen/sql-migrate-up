@@ -45,4 +45,12 @@ describe("Migrations", () => {
     const migrations = await runMigrations(context);
     expect(migrations).toBe(1);
   });
+
+  test("run migration from different than schema folder", async () => {
+    const migrations = await runMigrations({
+      ...context,
+      folder: () => "./tests/migrations",
+    });
+    expect(migrations).toBe(1);
+  });
 });
