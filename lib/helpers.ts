@@ -12,14 +12,14 @@ export function getMigrationsPath({
   runAlways,
 }: GetMigrationsPathOptions): string {
   if (typeof folder === "function") {
-    return path.join(".", folder(schema), runAlways ? RunAlways : RunOnce);
+    return path.join(folder(schema), runAlways ? RunAlways : RunOnce);
   }
 
   if (schema === null) {
-    return path.join(".", folder, runAlways ? RunAlways : RunOnce);
+    return path.join(folder, runAlways ? RunAlways : RunOnce);
   }
 
-  return path.join(".", folder, schema, runAlways ? RunAlways : RunOnce);
+  return path.join(folder, schema, runAlways ? RunAlways : RunOnce);
 }
 
 export function getTable(schema: string | null, table: string): string {
@@ -38,9 +38,8 @@ export function createMigrationError(file: string, e: Error): MigrationError {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function instanceOfNodeError<T extends new (...args: any[]) => Error>(
-  value: unknown,
-  ErrorType: T
-): value is InstanceType<T> & NodeJS.ErrnoException {
-  return value instanceof ErrorType;
+export function instanceOfNodeError(
+  value: unknown
+): value is Error & NodeJS.ErrnoException {
+  return value !== null && typeof value === "object" && "code" in value;
 }
