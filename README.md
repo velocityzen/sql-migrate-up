@@ -71,12 +71,12 @@ All migrations are split into two categories:
 
 ## SQLUp Options
 
-- name, string ("migrate") - the name of the script
-- version, string ("version of this package") - version of the script
-- schema, string ("public") - schema
-- folder, string ("./migrations") - folder with migrations files
-- table, string ("migrations") - the name of the table to keep the history of migration
-- now, string ("now()") - the sql function for getting current timestamp
+- name, <string> ("migrate") - the name of the script
+- version, <string> ("version of this package") - version of the script
+- schema, <string | null> ("public") - schema, if schema is set to `null` to schema will be enforced
+- folder, <string> or <(schema: string) => string> ("./migrations") - folder with migrations files, or a functinon that returns a folder
+- table, <string> ("migrations") - the name of the table to keep the history of migration
+- now, <string> ("now()") - the sql function for getting current timestamp
 - _parameters_, async function that should resolve into a data object that will be applied to every migration file
 - _query_, async function that runs SQL
 - _end_, async function that will be run after all is done. The perfect place to close your connections
