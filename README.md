@@ -1,7 +1,7 @@
-# sql-up-migrate
+# sql-migrate-up
 
-[![NPM Version](https://img.shields.io/npm/v/sql-up-migrate.svg?style=flat-square)](https://www.npmjs.com/package/sql-up-migrate)
-[![NPM Downloads](https://img.shields.io/npm/dt/sql-up-migrate.svg?style=flat-square)](https://www.npmjs.com/package/sql-up-migrate)
+[![NPM Version](https://img.shields.io/npm/v/sql-migrate-up.svg?style=flat-square)](https://www.npmjs.com/package/sql-migrate-up)
+[![NPM Downloads](https://img.shields.io/npm/dt/sql-migrate-up.svg?style=flat-square)](https://www.npmjs.com/package/sql-migrate-up)
 
 Simple SQL migration tool.
 
@@ -9,14 +9,14 @@ Tested with SQLite, PostgreSQL, Snowflake
 
 # Install
 
-`npm i sql-up-migrate`
+`npm i sql-migrate-up`
 
 # Usage
 
 Here is an example of your `migrate` command:
 
 ```typescript
-import SQLUp from "sql-up-migrate";
+import SQLUp from "sql-migrate-up";
 import { getDbClient, stopDbClient } from "./client";
 
 SQLUp({
@@ -86,7 +86,7 @@ All migrations are split into two categories:
 `runMigrations` take all the same arguments except `end`. Returns a number of applied migrations.
 
 ```ts
-import { runMigrations } from "sql-up-migrate";
+import { runMigrations } from "sql-migrate-up";
 
 import { getDbClient, stopDbClient } from "./client";
 
