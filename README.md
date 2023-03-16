@@ -81,7 +81,7 @@ All migrations are split into two categories:
 
 ## API: runMigrations
 
-run migrations take all the same arguments except `finally`. Returns a number of applied migrations.
+`runMigrations` take all the same arguments except `finally`. Returns a number of applied migrations.
 
 ```ts
 import { runMigrations } from "sql-up";
