@@ -54,7 +54,7 @@ async function runMigration(
       const fileName = path.basename(migrationFile);
       await query(`insert into
         ${getTable(schema, table)}
-        values ('${fileName}', ${now ? now : "now()"});
+        values ('${fileName}', ${now ? now : "CURRENT_TIMESTAMP"});
       `);
     }
   } catch (e) {
