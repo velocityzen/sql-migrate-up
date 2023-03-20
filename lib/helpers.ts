@@ -37,7 +37,6 @@ export function createMigrationError(file: string, e: Error): MigrationError {
   return error;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function instanceOfNodeError(
   value: unknown
 ): value is Error & NodeJS.ErrnoException {

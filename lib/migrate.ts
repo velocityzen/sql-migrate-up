@@ -110,7 +110,7 @@ async function getMigrationsFiles(
       path.join(migrationsPath, fileName)
     );
   } catch (e) {
-    if (runAlways && instanceOfNodeError(e) && e.code === "ENOENT") {
+    if (instanceOfNodeError(e) && e.code === "ENOENT") {
       return [];
     }
 
