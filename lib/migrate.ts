@@ -125,7 +125,10 @@ async function getCompletedMigrations({
 }: RunContext): Promise<MigrationRow[]> {
   const migrations = (await query(
     `
-    select * from ${getTable(schema, table)}
+    select
+      name as "name",
+      created_at as "created_at"
+    from ${getTable(schema, table)}
     order by name, created_at;
   `,
     true
