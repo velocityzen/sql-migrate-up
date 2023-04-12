@@ -102,6 +102,17 @@ const migrations = await runMigrations({
 });
 ```
 
+## Versioning
+
+This is advance option and you probably will never need it. However it is very usefull when you have mutliple parallel instances of the same script trying to migrate one schema.
+
+### Options
+
+- _version_, <string> required version of your package
+- _useVersioning_, <true> sets the migrations to be in versioning mode.
+
+How it works. If version changes works as usual, if version did not change no migration (not run-once, not run-always) will be applied.
+
 License
 
 [MIT](LICENSE)

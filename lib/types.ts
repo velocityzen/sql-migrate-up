@@ -11,9 +11,17 @@ export type MigrationsContext = {
   table: string;
 };
 
-export interface Options extends Partial<MigrationsContext> {
-  name?: string;
+interface OptionsUseVersioning {
+  version: string;
+  useVersioning: true;
+}
+
+interface OptionsVersion {
   version?: string;
+}
+
+interface OptionsCommon extends Partial<MigrationsContext> {
+  name?: string;
   parameters: (context: MigrationsContext) => Promise<Parameters>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query: (sql: string, isSelect?: boolean) => Promise<any>;
@@ -21,8 +29,23 @@ export interface Options extends Partial<MigrationsContext> {
   now?: string;
 }
 
-export type RunContext = MigrationsContext &
+export type Options = OptionsCommon & (OptionsVersion | OptionsUseVersioning);
+
+export type RunContextCommon = MigrationsContext &
+  OptionsVersion &
   Pick<Options, "parameters" | "query" | "now">;
+
+export type RunContextUseVersioning = MigrationsContext &
+  OptionsUseVersioning &
+  Pick<Options, "parameters" | "query" | "now">;
+
+export type RunContext = RunContextCommon | RunContextUseVersioning;
+
+export function doUseVersioning(
+  context: RunContext
+): context is RunContextUseVersioning {
+  return "useVersioning" in context && context.useVersioning === true;
+}
 
 export type CreateMigrationContext = MigrationsContext & {
   runAlways?: boolean;

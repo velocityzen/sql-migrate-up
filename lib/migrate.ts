@@ -1,11 +1,15 @@
 import fs from "fs/promises";
 import path from "path";
 
+import { partition } from "fp-ts/Array";
+
 import {
   MigrationRow,
   Parameters,
   RunContext,
+  RunContextUseVersioning,
   RX_MIGRATION_FILES,
+  doUseVersioning,
 } from "./types";
 
 import {
@@ -19,8 +23,17 @@ export async function runMigrations(
   context: RunContext,
   onMigrationApplied?: (fileName: string) => void | Promise<void>
 ): Promise<number> {
+  if (doUseVersioning(context) && !context.version) {
+    throw new Error("useVersioning is set to true, but version is not defined");
+  }
+
   await ensureSchemaAndMigrationTable(context);
-  const { filesToRunOnce, filesToRunAlways } = await getNewMigrations(context);
+  const migrations = await getNewMigrations(context);
+  if (!migrations) {
+    return 0;
+  }
+
+  const { filesToRunOnce, filesToRunAlways } = migrations;
   const migrationData = await context.parameters(context);
 
   for await (const migrationFile of filesToRunOnce) {
@@ -35,6 +48,10 @@ export async function runMigrations(
     if (onMigrationApplied) {
       await onMigrationApplied(migrationFile);
     }
+  }
+
+  if (doUseVersioning(context)) {
+    await saveVersion(context);
   }
 
   return filesToRunOnce.length + filesToRunAlways.length;
@@ -79,12 +96,37 @@ async function loadMigration(
   );
 }
 
+const rxVersion = /^version-(.*)/;
+const splitMigrationsAndVersions = partition<MigrationRow>((row) =>
+  rxVersion.test(row.name)
+);
+
 async function getNewMigrations(context: RunContext) {
-  const [migrations, fsFilesRunOnce, filesToRunAlways] = await Promise.all([
+  const [rows, fsFilesRunOnce, filesToRunAlways] = await Promise.all([
     getCompletedMigrations(context),
     getMigrationsFiles(context),
     getMigrationsFiles(context, true),
   ]);
+
+  let migrations: MigrationRow[];
+
+  if (doUseVersioning(context)) {
+    const { right: versions, left: migrationRows } =
+      splitMigrationsAndVersions(rows);
+    const latest = versions.at(-1);
+
+    if (latest) {
+      const match = latest.name.match(rxVersion);
+      if (match?.[1] === context.version) {
+        // version matches, all good, bye!
+        return null;
+      }
+    }
+
+    migrations = migrationRows;
+  } else {
+    migrations = rows;
+  }
 
   const dbFiles = migrations.map((row) => row.name);
   const filesToRunOnce = fsFilesRunOnce.filter(
@@ -118,7 +160,7 @@ async function getMigrationsFiles(
   }
 }
 
-async function getCompletedMigrations({
+export async function getCompletedMigrations({
   query,
   schema,
   table,
@@ -129,7 +171,7 @@ async function getCompletedMigrations({
       name as "name",
       created_at as "created_at"
     from ${getTable(schema, table)}
-    order by name, created_at;
+    order by created_at, name;
   `,
     true
   )) as MigrationRow[];
@@ -162,4 +204,17 @@ async function ensureMigrationsTableExists({
     name text not null,
     created_at timestamp not null
   );`);
+}
+
+async function saveVersion({
+  query,
+  schema,
+  table,
+  version,
+  now,
+}: RunContextUseVersioning) {
+  await query(`insert into
+    ${getTable(schema, table)}
+    values ('version-${version}', ${now ? now : "CURRENT_TIMESTAMP"});
+  `);
 }
