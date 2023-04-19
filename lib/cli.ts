@@ -25,8 +25,9 @@ export function runCli(options: Options) {
             context.schema !== null ? `to ${context.schema}` : ""
           }`
         );
+
         const runnedMigrationsNumber = await runMigrations(
-          { ...context, parameters: options.parameters, query: options.query },
+          { ...options, ...context },
           (name) => {
             console.info(`> ${name}`);
           }
