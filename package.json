@@ -23,7 +23,7 @@
     "postgresql",
     "snowflake"
   ],
-  "author": "",
+  "author": "Alexey Novikov <v@2dubs.com>",
   "license": "MIT",
   "dependencies": {
     "commander": "^10.0.0",
