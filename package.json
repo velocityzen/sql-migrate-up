@@ -10,7 +10,7 @@
     "compile": "tsc --project tsconfig.json --noEmit",
     "compile:watch": "npm run compile -- --watch",
     "lint": "eslint .",
-    "release": "npm run test && npm run lint && npm run build && release-it",
+    "release": "npm run test && npm run lint && npm run build && release-it --git.commit --git.tag --git.push",
     "test": "NODE_ENV=test jest --verbose",
     "test:coverage": "NODE_ENV=test jest --verbose --coverage",
     "test:watch": "NODE_ENV=test jest --verbose --watchAll"
