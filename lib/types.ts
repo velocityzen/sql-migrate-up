@@ -25,7 +25,7 @@ interface OptionsCommon extends Partial<MigrationsContext> {
   parameters: (context: MigrationsContext) => Promise<Parameters>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   query: (sql: string, isSelect?: boolean) => Promise<any>;
-  end: () => Promise<void>;
+  end?: () => Promise<void>;
   now?: string;
 }
 

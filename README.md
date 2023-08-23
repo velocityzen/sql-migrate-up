@@ -79,7 +79,7 @@ All migrations are split into two categories:
 - now, <string> ("now()") - the sql function for getting current timestamp
 - _parameters_, async function that should resolve into a data object that will be applied to every migration file
 - _query_, async function that runs SQL
-- _end_, async function that will be run after all is done. The perfect place to close your connections
+- end, async function that will be run after all is done. The perfect place to close your connections
 
 ## API: runMigrations
 
