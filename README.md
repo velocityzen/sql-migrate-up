@@ -16,10 +16,10 @@ Tested with SQLite, PostgreSQL, Snowflake
 Here is an example of your `migrate` command:
 
 ```typescript
-import SQLUp from "sql-migrate-up";
+import { runCli } from "sql-migrate-up";
 import { getDbClient, stopDbClient } from "./client";
 
-SQLUp({
+runCli({
   schema: "public",
   folder: "./migrations",
   table: "migrations",

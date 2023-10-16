@@ -42,7 +42,7 @@ export type RunContextUseVersioning = MigrationsContext &
 export type RunContext = RunContextCommon | RunContextUseVersioning;
 
 export function doUseVersioning(
-  context: RunContext
+  context: RunContext,
 ): context is RunContextUseVersioning {
   return "useVersioning" in context && context.useVersioning === true;
 }

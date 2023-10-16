@@ -21,7 +21,7 @@ import {
 
 export async function runMigrations(
   context: RunContext,
-  onMigrationApplied?: (fileName: string) => void | Promise<void>
+  onMigrationApplied?: (fileName: string) => void | Promise<void>,
 ): Promise<number> {
   if (doUseVersioning(context) && !context.version) {
     throw new Error("useVersioning is set to true, but version is not defined");
@@ -61,7 +61,7 @@ async function runMigration(
   { schema, table, query, now }: RunContext,
   migrationFile: string,
   data: Parameters,
-  saveMigration = true
+  saveMigration = true,
 ) {
   try {
     const migrationSql = await loadMigration(migrationFile, data);
@@ -76,7 +76,7 @@ async function runMigration(
     }
   } catch (e) {
     if (!(e instanceof Error)) {
-      return e;
+      throw e;
     }
 
     const error = createMigrationError(migrationFile, e);
@@ -86,19 +86,19 @@ async function runMigration(
 
 async function loadMigration(
   migrationFile: string,
-  data: Parameters
+  data: Parameters,
 ): Promise<string> {
   const templateSql = await fs.readFile(migrationFile, "utf8");
 
   return Array.from(Object.entries(data)).reduce(
     (sql, [key, value]) => (value ? sql.replaceAll(`{{${key}}}`, value) : sql),
-    templateSql
+    templateSql,
   );
 }
 
 const rxVersion = /^version-(.*)/;
 const splitMigrationsAndVersions = partition<MigrationRow>((row) =>
-  rxVersion.test(row.name)
+  rxVersion.test(row.name),
 );
 
 async function getNewMigrations(context: RunContext) {
@@ -130,7 +130,7 @@ async function getNewMigrations(context: RunContext) {
 
   const dbFiles = migrations.map((row) => row.name);
   const filesToRunOnce = fsFilesRunOnce.filter(
-    (name) => !dbFiles.includes(path.basename(name))
+    (name) => !dbFiles.includes(path.basename(name)),
   );
 
   return { filesToRunOnce, filesToRunAlways };
@@ -138,7 +138,7 @@ async function getNewMigrations(context: RunContext) {
 
 async function getMigrationsFiles(
   context: RunContext,
-  runAlways = false
+  runAlways = false,
 ): Promise<string[]> {
   const migrationsPath = getMigrationsPath({ ...context, runAlways });
 
@@ -149,7 +149,7 @@ async function getMigrationsFiles(
       .sort((a, b) => a.localeCompare(b));
 
     return migrationFiles.map((fileName) =>
-      path.join(migrationsPath, fileName)
+      path.join(migrationsPath, fileName),
     );
   } catch (e) {
     if (instanceOfNodeError(e) && e.code === "ENOENT") {
@@ -173,7 +173,7 @@ export async function getCompletedMigrations({
     from ${getTable(schema, table)}
     order by created_at, name;
   `,
-    true
+    true,
   )) as MigrationRow[];
 
   return migrations ?? [];

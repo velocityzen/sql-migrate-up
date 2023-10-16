@@ -9,7 +9,7 @@ import { getMigrationsPath } from "./helpers";
 
 export async function createMigration(
   context: CreateMigrationContext,
-  migrationName: string
+  migrationName: string,
 ): Promise<string> {
   const nextMigrationNumber = DateTime.utc().toUnixInteger();
   const nextMigrationName = slugify(migrationName, {
@@ -21,7 +21,7 @@ export async function createMigration(
   const migrationPath = getMigrationsPath(context);
   const fullMigrationPath = path.join(
     migrationPath,
-    `${nextMigrationNumber}_${nextMigrationName}.sql`
+    `${nextMigrationNumber}_${nextMigrationName}.sql`,
   );
 
   await mkdirp(migrationPath);

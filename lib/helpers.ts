@@ -38,7 +38,7 @@ export function createMigrationError(file: string, e: Error): MigrationError {
 }
 
 export function instanceOfNodeError(
-  value: unknown
+  value: unknown,
 ): value is Error & NodeJS.ErrnoException {
   return value !== null && typeof value === "object" && "code" in value;
 }

@@ -23,20 +23,20 @@ export function runCli(options: Options) {
         console.info(
           `Appling migrations ${
             context.schema !== null ? `to ${context.schema}` : ""
-          }`
+          }`,
         );
 
         const runnedMigrationsNumber = await runMigrations(
           { ...options, ...context },
           (name) => {
             console.info(`> ${name}`);
-          }
+          },
         );
         if (runnedMigrationsNumber === 0) {
           console.info("No migrations to run. DB is up to date.");
         } else {
           console.info(
-            `${runnedMigrationsNumber} migrations applied. DB is up to date.`
+            `${runnedMigrationsNumber} migrations applied. DB is up to date.`,
           );
         }
         await options.end?.();

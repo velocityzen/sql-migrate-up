@@ -1,38 +1,30 @@
 {
   "compilerOptions": {
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
+    "downlevelIteration": true,
     "esModuleInterop": true,
-    "lib": [
-      "esnext"
-    ],
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "lib": ["esnext"],
     "module": "esnext",
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
     "target": "es2020",
-    "allowJs": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "downlevelIteration": true,
-    "noEmit": true,
-    "isolatedModules": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "./types"
-    ]
+    "typeRoots": ["node_modules/@types", "./types"],
+    "declarationDir": "./build"
   },
   "ts-node": {
     "compilerOptions": {
       "module": "commonjs"
     }
   },
-  "include": [
-    "types/**/*",
-    "lib/**/*",
-    "tests/**/*"
-  ]
+  "include": ["rollup.config.ts", "types/**/*", "lib/**/*", "tests/**/*"]
 }
