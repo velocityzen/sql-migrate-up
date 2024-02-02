@@ -42,3 +42,11 @@ export function instanceOfNodeError(
 ): value is Error & NodeJS.ErrnoException {
   return value !== null && typeof value === "object" && "code" in value;
 }
+
+export function toMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}

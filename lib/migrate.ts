@@ -159,7 +159,7 @@ async function getMigrationsFiles(
 
     if (difference.length) {
       throw new Error(
-        `Found migration files that do not start with a number: \n${difference.join(
+        `Found migration files that do not start with a number and will not be ran: \n${difference.join(
           "\n",
         )}`,
       );

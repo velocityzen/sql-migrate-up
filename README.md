@@ -113,6 +113,8 @@ This is advance option and you probably will never need it. However it is very u
 
 How it works. If version changes works as usual, if version did not change no migration (not run-once, not run-always) will be applied.
 
+When using versioning you can use `--force` flag to force run migrations for the same version.
+
 License
 
 [MIT](LICENSE)

@@ -5,6 +5,7 @@ import { Options, MigrationsContext, CreateMigrationContext } from "./types";
 import { getCLIOptions } from "./options";
 import { createMigration } from "./create";
 import { runMigrations } from "./migrate";
+import { toMessage } from "./helpers";
 
 export function runCli(options: Options) {
   const { schemaOption, tableOption, folderOption, runOption, forceOption } =
@@ -43,7 +44,7 @@ export function runCli(options: Options) {
         await options.end?.();
       } catch (error) {
         await options.end?.();
-        console.error("Failed to run migrations:", error);
+        console.error("Failed to run migrations:", toMessage(error));
         process.exit(1);
       }
     });
@@ -63,7 +64,7 @@ export function runCli(options: Options) {
         await options.end?.();
       } catch (error) {
         await options.end?.();
-        console.error("Failed to create migration:", error);
+        console.error("Failed to create migration:", toMessage(error));
         process.exit(1);
       }
     });
