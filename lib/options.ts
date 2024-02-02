@@ -26,5 +26,10 @@ export function getCLIOptions({ table, folder, schema }: Options) {
     "create run-always migration instead of run-once",
   ).default(false);
 
-  return { schemaOption, tableOption, folderOption, runOption };
+  const forceOption = new Option(
+    "--force",
+    "force run migration with the same version",
+  ).default(false);
+
+  return { schemaOption, tableOption, folderOption, runOption, forceOption };
 }

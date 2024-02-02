@@ -1,8 +1,6 @@
 export const RunOnce = "run-once";
 export const RunAlways = "run-always";
 
-export const RX_MIGRATION_FILES = /^\d+[-_].*\.sql$/;
-
 export type Parameters = Record<string, string | undefined>;
 
 export type MigrationsContext = {
@@ -14,6 +12,7 @@ export type MigrationsContext = {
 interface OptionsUseVersioning {
   version: string;
   useVersioning: true;
+  force: boolean;
 }
 
 interface OptionsVersion {
@@ -44,7 +43,11 @@ export type RunContext = RunContextCommon | RunContextUseVersioning;
 export function doUseVersioning(
   context: RunContext,
 ): context is RunContextUseVersioning {
-  return "useVersioning" in context && context.useVersioning === true;
+  return (
+    "useVersioning" in context &&
+    context.useVersioning === true &&
+    context.force !== true
+  );
 }
 
 export type CreateMigrationContext = MigrationsContext & {

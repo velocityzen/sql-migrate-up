@@ -59,8 +59,18 @@ describe("Versioning", () => {
     expect(migrationRows.length).toBe(4);
   });
 
-  test("run new version again,  and check that nothing was run again", async () => {
+  test("run new version again, and check that nothing was run again", async () => {
     const migrations = await runMigrations({ ...context, version: "new" });
     expect(migrations).toBe(0);
+  });
+
+  test("run new version again with force flag", async () => {
+    const migrations = await runMigrations({
+      ...context,
+      version: "new",
+      force: true,
+    });
+
+    expect(migrations).toBe(1);
   });
 });

@@ -7,7 +7,7 @@ import { createMigration } from "./create";
 import { runMigrations } from "./migrate";
 
 export function runCli(options: Options) {
-  const { schemaOption, tableOption, folderOption, runOption } =
+  const { schemaOption, tableOption, folderOption, runOption, forceOption } =
     getCLIOptions(options);
 
   program.name(options.name ?? "migrate").version(options.version ?? version);
@@ -18,6 +18,7 @@ export function runCli(options: Options) {
     .addOption(schemaOption)
     .addOption(tableOption)
     .addOption(folderOption)
+    .addOption(forceOption)
     .action(async (context: MigrationsContext) => {
       try {
         console.info(

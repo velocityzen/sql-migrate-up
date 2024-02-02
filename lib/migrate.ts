@@ -8,7 +8,6 @@ import {
   Parameters,
   RunContext,
   RunContextUseVersioning,
-  RX_MIGRATION_FILES,
   doUseVersioning,
 } from "./types";
 
@@ -141,12 +140,30 @@ async function getMigrationsFiles(
   runAlways = false,
 ): Promise<string[]> {
   const migrationsPath = getMigrationsPath({ ...context, runAlways });
+  const rxSqlFiles = /\.sql$/;
+  const rxMigrationFiles = /^\d+[-_].*\.sql$/;
 
   try {
     const files = await fs.readdir(migrationsPath);
-    const migrationFiles = files
-      .filter((file) => RX_MIGRATION_FILES.test(path.basename(file)))
+    const allSqlFiles = files
+      .filter((file) => rxSqlFiles.test(path.basename(file)))
       .sort((a, b) => a.localeCompare(b));
+
+    const migrationFiles = allSqlFiles.filter((file) =>
+      rxMigrationFiles.test(path.basename(file)),
+    );
+
+    const difference = allSqlFiles.filter(
+      (element) => !migrationFiles.includes(element),
+    );
+
+    if (difference.length) {
+      throw new Error(
+        `Found migration files that do not start with a number: \n${difference.join(
+          "\n",
+        )}`,
+      );
+    }
 
     return migrationFiles.map((fileName) =>
       path.join(migrationsPath, fileName),

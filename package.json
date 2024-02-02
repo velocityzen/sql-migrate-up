@@ -52,7 +52,7 @@
     "release-it": "*",
     "rimraf": "^5.0.0",
     "rollup": "^4.1.4",
-    "rollup-plugin-node-externals": "^6.1.2",
+    "rollup-plugin-node-externals": "^7.0.0",
     "ts-jest": "^29.0.0",
     "typescript": "^5.0.0"
   }
