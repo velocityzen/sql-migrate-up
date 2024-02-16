@@ -18,7 +18,7 @@ function decode<A, O>(
 }
 
 describe("Dependencies", () => {
-  test("happy", async () => {
+  test("happy", () => {
     expect(decode(DependenciesFile, `{"before":["path"]}`)).toEqual({
       before: ["path"],
     });
@@ -35,7 +35,7 @@ describe("Dependencies", () => {
     });
   });
 
-  test("sad", async () => {
+  test("sad", () => {
     expect(decode(DependenciesFile, `{"after":[]}`)).toEqual(undefined);
     expect(decode(DependenciesFile, `{"after":[""]}`)).toEqual(undefined);
     expect(decode(DependenciesFile, `{"before":[]}`)).toEqual(undefined);
