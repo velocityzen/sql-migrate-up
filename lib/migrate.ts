@@ -22,6 +22,7 @@ import {
   hasMigrations,
 } from "./migrations";
 import { createMigrationError, getTable } from "./helpers";
+import { applyData } from "./template";
 
 export async function runMigrations(
   context: RunContext,
@@ -86,7 +87,8 @@ async function runMigration(
   saveMigration = true,
 ) {
   try {
-    const migrationSql = await loadMigration(migrationFile, data);
+    const templateSql = await fs.readFile(migrationFile, "utf8");
+    const migrationSql = applyData(migrationFile, templateSql, data);
     await query(migrationSql);
 
     if (saveMigration) {
@@ -103,28 +105,6 @@ async function runMigration(
     const error = createMigrationError(migrationFile, e);
     throw error;
   }
-}
-
-async function loadMigration(
-  migrationFile: string,
-  data: Parameters,
-): Promise<string> {
-  const templateSql = await fs.readFile(migrationFile, "utf8");
-
-  const sql = Array.from(Object.entries(data)).reduce(
-    (sql, [key, value]) => (value ? sql.replaceAll(`{{${key}}}`, value) : sql),
-    templateSql,
-  );
-
-  const extraParameters = Array.from(sql.matchAll(/{{([-a-zA-Z0-9_]+)}}/gi));
-  if (extraParameters.length > 0) {
-    const extraNames = extraParameters.map((tuple) => tuple[1]);
-    throw new Error(
-      `Found extra paramters ${extraNames.join(",")} in ${migrationFile}`,
-    );
-  }
-
-  return sql;
 }
 
 function getNewMigrations(context: RunContext) {
