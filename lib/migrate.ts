@@ -1,7 +1,11 @@
 import fs from "fs/promises";
-import path from "path";
 
-import { partition } from "fp-ts/Array";
+import * as AP from "fp-ts/Apply";
+import * as E from "fp-ts/Either";
+import * as O from "fp-ts/Option";
+import * as RA from "fp-ts/ReadonlyArray";
+import * as TE from "fp-ts/TaskEither";
+import { pipe, identity, constNull } from "fp-ts/function";
 
 import {
   MigrationRow,
@@ -12,11 +16,12 @@ import {
 } from "./types";
 
 import {
-  getMigrationsPath,
-  createMigrationError,
-  instanceOfNodeError,
-  getTable,
-} from "./helpers";
+  filterCompleted,
+  getAllMigrations,
+  getDbMigrationsFiles,
+  hasMigrations,
+} from "./migrations";
+import { createMigrationError, getTable } from "./helpers";
 
 export async function runMigrations(
   context: RunContext,
@@ -27,25 +32,43 @@ export async function runMigrations(
   }
 
   await ensureSchemaAndMigrationTable(context);
-  const migrations = await getNewMigrations(context);
-  if (!migrations) {
+
+  const getMigrations = pipe(
+    context,
+    getNewMigrations,
+    TE.match(
+      (error) => {
+        throw error;
+      },
+      O.match(constNull, identity),
+    ),
+  );
+
+  const migrations = await getMigrations();
+  if (!migrations || migrations.length === 0) {
     return 0;
   }
 
-  const { filesToRunOnce, filesToRunAlways } = migrations;
   const migrationData = await context.parameters(context);
 
-  for await (const migrationFile of filesToRunOnce) {
-    await runMigration(context, migrationFile, migrationData);
-    if (onMigrationApplied) {
-      await onMigrationApplied(migrationFile);
-    }
-  }
+  let total = 0;
+  for await (const m of migrations) {
+    const { once, always } = m;
 
-  for await (const migrationFile of filesToRunAlways) {
-    await runMigration(context, migrationFile, migrationData, false);
-    if (onMigrationApplied) {
-      await onMigrationApplied(migrationFile);
+    for await (const migrationFile of once) {
+      await runMigration(context, migrationFile, migrationData);
+      total++;
+      if (onMigrationApplied) {
+        await onMigrationApplied(migrationFile);
+      }
+    }
+
+    for await (const migrationFile of always) {
+      await runMigration(context, migrationFile, migrationData, false);
+      total++;
+      if (onMigrationApplied) {
+        await onMigrationApplied(migrationFile);
+      }
     }
   }
 
@@ -53,7 +76,7 @@ export async function runMigrations(
     await saveVersion(context);
   }
 
-  return filesToRunOnce.length + filesToRunAlways.length;
+  return total;
 }
 
 async function runMigration(
@@ -67,10 +90,9 @@ async function runMigration(
     await query(migrationSql);
 
     if (saveMigration) {
-      const fileName = path.basename(migrationFile);
       await query(`insert into
         ${getTable(schema, table)}
-        values ('${fileName}', ${now ? now : "CURRENT_TIMESTAMP"});
+        values ('${migrationFile}', ${now ? now : "CURRENT_TIMESTAMP"});
       `);
     }
   } catch (e) {
@@ -89,95 +111,43 @@ async function loadMigration(
 ): Promise<string> {
   const templateSql = await fs.readFile(migrationFile, "utf8");
 
-  return Array.from(Object.entries(data)).reduce(
+  const sql = Array.from(Object.entries(data)).reduce(
     (sql, [key, value]) => (value ? sql.replaceAll(`{{${key}}}`, value) : sql),
     templateSql,
   );
-}
 
-const rxVersion = /^version-(.*)/;
-const splitMigrationsAndVersions = partition<MigrationRow>((row) =>
-  rxVersion.test(row.name),
-);
-
-async function getNewMigrations(context: RunContext) {
-  const [rows, fsFilesRunOnce, filesToRunAlways] = await Promise.all([
-    getCompletedMigrations(context),
-    getMigrationsFiles(context),
-    getMigrationsFiles(context, true),
-  ]);
-
-  let migrations: MigrationRow[];
-
-  if (doUseVersioning(context)) {
-    const { right: versions, left: migrationRows } =
-      splitMigrationsAndVersions(rows);
-    const latest = versions.at(-1);
-
-    if (latest) {
-      const match = latest.name.match(rxVersion);
-      if (match?.[1] === context.version) {
-        // version matches, all good, bye!
-        return null;
-      }
-    }
-
-    migrations = migrationRows;
-  } else {
-    migrations = rows;
+  const extraParameters = Array.from(sql.matchAll(/{{([-a-zA-Z0-9_]+)}}/gi));
+  if (extraParameters.length > 0) {
+    const extraNames = extraParameters.map((tuple) => tuple[1]);
+    throw new Error(
+      `Found extra paramters ${extraNames.join(",")} in ${migrationFile}`,
+    );
   }
 
-  const dbFiles = migrations.map((row) => row.name);
-  const filesToRunOnce = fsFilesRunOnce.filter(
-    (name) => !dbFiles.includes(path.basename(name)),
+  return sql;
+}
+
+function getNewMigrations(context: RunContext) {
+  const getTogether = AP.sequenceT(TE.ApplyPar);
+
+  return pipe(
+    getTogether(getCompletedMigrations(context), getAllMigrations(context)),
+    TE.map(([rows, migrations]) =>
+      pipe(
+        getDbMigrationsFiles(rows, context),
+        O.map((completed) =>
+          pipe(
+            migrations,
+            RA.map(filterCompleted(completed)),
+            RA.filter(hasMigrations),
+          ),
+        ),
+      ),
+    ),
   );
-
-  return { filesToRunOnce, filesToRunAlways };
 }
 
-async function getMigrationsFiles(
-  context: RunContext,
-  runAlways = false,
-): Promise<string[]> {
-  const migrationsPath = getMigrationsPath({ ...context, runAlways });
-  const rxSqlFiles = /\.sql$/;
-  const rxMigrationFiles = /^\d+[-_].*\.sql$/;
-
-  try {
-    const files = await fs.readdir(migrationsPath);
-    const allSqlFiles = files
-      .filter((file) => rxSqlFiles.test(path.basename(file)))
-      .sort((a, b) => a.localeCompare(b));
-
-    const migrationFiles = allSqlFiles.filter((file) =>
-      rxMigrationFiles.test(path.basename(file)),
-    );
-
-    const difference = allSqlFiles.filter(
-      (element) => !migrationFiles.includes(element),
-    );
-
-    if (difference.length) {
-      throw new Error(
-        `Found migration files that do not start with a number and will not be ran: \n${difference.join(
-          "\n",
-        )}`,
-      );
-    }
-
-    return migrationFiles.map((fileName) =>
-      path.join(migrationsPath, fileName),
-    );
-  } catch (e) {
-    if (instanceOfNodeError(e) && e.code === "ENOENT") {
-      return [];
-    }
-
-    throw e;
-  }
-}
-
-export async function getCompletedMigrations({
+export async function getCompletedMigrationsPromise({
   query,
   schema,
   table,
@@ -195,6 +165,11 @@ export async function getCompletedMigrations({
 
   return migrations ?? [];
 }
+
+const getCompletedMigrations = TE.tryCatchK(
+  getCompletedMigrationsPromise,
+  E.toError,
+);
 
 async function ensureSchemaAndMigrationTable(context: RunContext) {
   await ensureSchemaExists(context);

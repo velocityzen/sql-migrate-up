@@ -1,25 +1,18 @@
-import path from "path";
+import * as E from "fp-ts/Either";
+import { pipe } from "fp-ts/function";
+import * as t from "io-ts";
+import { PathReporter } from "io-ts/PathReporter";
+import { MigrationError } from "./types";
 
-import { RunOnce, RunAlways, MigrationError, MigrationsContext } from "./types";
-
-type GetMigrationsPathOptions = Pick<MigrationsContext, "schema" | "folder"> & {
-  runAlways?: boolean;
-};
-
-export function getMigrationsPath({
-  folder,
-  schema,
-  runAlways,
-}: GetMigrationsPathOptions): string {
-  if (typeof folder === "function") {
-    return path.join(folder(schema), runAlways ? RunAlways : RunOnce);
-  }
-
-  if (schema === null) {
-    return path.join(folder, runAlways ? RunAlways : RunOnce);
-  }
-
-  return path.join(folder, schema, runAlways ? RunAlways : RunOnce);
+export function fromValidation<A>(
+  validation: t.Validation<A>,
+): E.Either<Error, A> {
+  return pipe(
+    validation,
+    E.mapLeft(
+      (errors) => new Error(PathReporter.report(E.left(errors)).join("\n")),
+    ),
+  );
 }
 
 export function getTable(schema: string | null, table: string): string {

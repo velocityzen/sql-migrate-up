@@ -115,6 +115,28 @@ How it works. If version changes works as usual, if version did not change no mi
 
 When using versioning you can use `--force` flag to force run migrations for the same version.
 
+## Dependecies
+
+If there is migration dependency on external folder, ie. npm package there is a way to include that in migration process as well. Create a file `migrations.json` in the migrations folder:
+
+```
+/*
+ /migrations
+    - run-once
+    migrations.json
+*/
+
+{
+  "before": ["path/to/migrations", "path/to/another/migrations"],
+  "after": ["path/to/migrations"]
+}
+```
+
+* All paths should have the same structure as local migrations.
+* `migrations.json` from external migrations will be ignored
+* `before` and `after` are both optional but the file should have at least one
+* Migrations history would have full path to migration file relative to root of the script
+
 License
 
 [MIT](LICENSE)

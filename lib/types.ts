@@ -1,3 +1,4 @@
+export const Dependecies = "migrations.json";
 export const RunOnce = "run-once";
 export const RunAlways = "run-always";
 

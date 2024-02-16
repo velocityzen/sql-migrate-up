@@ -19,6 +19,7 @@ module.exports = {
         "plugin:prettier/recommended",
       ],
       rules: {
+        "@typescript-eslint/unbound-method": "off",
         "@typescript-eslint/no-unused-vars": [
           "error",
           {

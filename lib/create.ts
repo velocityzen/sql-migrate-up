@@ -5,7 +5,7 @@ import { mkdirp } from "mkdirp";
 import { DateTime } from "luxon";
 
 import { CreateMigrationContext } from "./types";
-import { getMigrationsPath } from "./helpers";
+import { getMigrationsPath } from "./migrations";
 
 export async function createMigration(
   context: CreateMigrationContext,

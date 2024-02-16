@@ -1,6 +1,6 @@
 import Database from "better-sqlite3";
 import { runMigrations, RunContext } from "../lib";
-import { getCompletedMigrations } from "../lib/migrate";
+import { getCompletedMigrationsPromise } from "../lib/migrate";
 import { MigrationRow } from "../lib/types";
 import { version } from "../package.json";
 
@@ -41,8 +41,12 @@ describe("Versioning", () => {
       .all() as MigrationRow[];
 
     expect(migrationRows.length).toEqual(3);
-    expect(migrationRows[0].name).toEqual("01-table.sql");
-    expect(migrationRows[1].name).toEqual("02-insert.sql");
+    expect(migrationRows[0].name).toEqual(
+      "tests/migrations/run-once/01-table.sql",
+    );
+    expect(migrationRows[1].name).toEqual(
+      "tests/migrations/run-once/02-insert.sql",
+    );
     expect(migrationRows[2].name).toEqual(`version-${version}`);
   });
 
@@ -55,7 +59,7 @@ describe("Versioning", () => {
     const migrations = await runMigrations({ ...context, version: "new" });
     expect(migrations).toBe(1);
 
-    const migrationRows = await getCompletedMigrations(context);
+    const migrationRows = await getCompletedMigrationsPromise(context);
     expect(migrationRows.length).toBe(4);
   });
 

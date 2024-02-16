@@ -37,8 +37,12 @@ describe("Migrations", () => {
       .all() as MigrationRow[];
 
     expect(migrationRows.length).toEqual(2);
-    expect(migrationRows[0].name).toEqual("01-table.sql");
-    expect(migrationRows[1].name).toEqual("02-insert.sql");
+    expect(migrationRows[0].name).toEqual(
+      "tests/migrations/run-once/01-table.sql",
+    );
+    expect(migrationRows[1].name).toEqual(
+      "tests/migrations/run-once/02-insert.sql",
+    );
   });
 
   test("run everything again, and check run-always", async () => {
