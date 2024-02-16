@@ -15,6 +15,16 @@
     "test:coverage": "NODE_ENV=test jest --verbose --coverage",
     "test:watch": "NODE_ENV=test jest --verbose --watchAll"
   },
+
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/velocityzen/sql-migrate-up.git"
+  },
+  "bugs": {
+    "url": "https://github.com/velocityzen/sql-migrate-up/issues"
+  },
+  "homepage": "https://github.com/velocityzen/sql-migrate-up#readme",
+
   "keywords": [
     "migration",
     "migrate",
