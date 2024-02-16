@@ -122,8 +122,9 @@ If there is migration dependency on external folder, ie. npm package there is a 
 ```
 /*
  /migrations
-    - run-once
-    migrations.json
+   [/schema]
+     run-once
+     migrations.json
 */
 
 {
@@ -135,7 +136,9 @@ If there is migration dependency on external folder, ie. npm package there is a 
 * All paths should have the same structure as local migrations.
 * `migrations.json` from external migrations will be ignored
 * `before` and `after` are both optional but the file should have at least one
-* Migrations history would have full path to migration file relative to root of the script
+* Migrations history would have full path to migration file relative to the current working directory
+* for `before` folders both `run-once` and `run-always` migration will be applied before all local migrations
+* for `after` folders both `run-once` and `run-always` migration will be applied after all local migrations
 
 License
 
