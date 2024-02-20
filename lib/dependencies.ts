@@ -2,7 +2,7 @@ import * as J from "fp-ts/Json";
 import * as E from "fp-ts/Either";
 import { pipe, flow } from "fp-ts/function";
 import * as t from "io-ts";
-import excess from "io-ts-excess";
+import { excess } from "io-ts-excess";
 import { nonEmptyArray, NonEmptyString, withMessage } from "io-ts-types";
 import { Dependecies } from "./types";
 
