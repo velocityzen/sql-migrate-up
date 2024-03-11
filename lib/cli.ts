@@ -61,9 +61,7 @@ export function runCli(options: Options) {
       try {
         const newMigrationName = await createMigration(context, name.join(" "));
         console.info(`New migration has been created at: ${newMigrationName}`);
-        await options.end?.();
       } catch (error) {
-        await options.end?.();
         console.error("Failed to create migration:", toMessage(error));
         process.exit(1);
       }
