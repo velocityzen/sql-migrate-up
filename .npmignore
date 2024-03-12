@@ -1,3 +1,6 @@
-lib/
-tests/
-coverage/
+/lib/
+/tests/
+/coverage/
+rollup.config.ts
+tsconfig.json
+jest.config.js
