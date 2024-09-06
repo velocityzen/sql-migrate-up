@@ -10,8 +10,10 @@ import { createMigration, CreateMigrationContext } from "./create";
 import { migrateUp } from "./migrate";
 import { getCLIOptions } from "./options";
 import { MigrationsContext, Options } from "./types";
+import { checkMigrations } from "./check";
+import { ParserOptions } from "sql-parser-cst";
 
-export function cli(options: Options) {
+export function cli(options: Options, parserOptions: ParserOptions) {
   const { schemaOption, tableOption, folderOption, runOption, forceOption } =
     getCLIOptions(options);
 
@@ -65,17 +67,25 @@ export function cli(options: Options) {
       ),
     );
 
-  // program
-  //   .command("check")
-  //   .description("checks all migrations for errors")
-  //   .addOption(schemaOption)
-  //   .addOption(tableOption)
-  //   .addOption(folderOption)
-  //   .action(
-  //     createActionFor((args: MigrationsContext) =>
-  //       checkMigrations({ ...options, ...args }),
-  //     ),
-  //   );
+  program
+    .command("check")
+    .description("checks all migrations for errors")
+    .addOption(schemaOption)
+    .addOption(tableOption)
+    .addOption(folderOption)
+    .action(
+      createActionFor((context: MigrationsContext) =>
+        pipe(
+          TE.of({ ...options, ...context }),
+          TE.tapIO(({ schema }) =>
+            C.info(
+              `Checking migrations ${schema !== null ? `for ${schema}` : ""}`,
+            ),
+          ),
+          TE.flatMap((context) => checkMigrations(context, parserOptions)),
+        ),
+      ),
+    );
 
   program
     .command("create")

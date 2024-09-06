@@ -265,7 +265,7 @@ export function hasMigrations(m: undefined | Migrations): boolean {
   return m !== undefined && (m.once.length > 0 || m.always.length > 0);
 }
 
-const foldMigrations: (
+export const foldMigrations: (
   migrations: RNEA.ReadonlyNonEmptyArray<Migrations>,
 ) => readonly [string, boolean][] = RA.foldMap(
   RA.getMonoid<[string, boolean]>(),

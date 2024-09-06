@@ -41,7 +41,8 @@
     "io-ts-types": "^0.5.19",
     "luxon": "^3.3.0",
     "mkdirp": "^3.0.0",
-    "slugify": "^1.6.5"
+    "slugify": "^1.6.5",
+    "sql-parser-cst": "^0.28.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
