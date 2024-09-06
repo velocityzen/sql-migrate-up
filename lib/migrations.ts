@@ -196,6 +196,7 @@ export function getAllMigrations(
         dependencies.before,
         ROA.concat(ROA.of(local)),
         ROA.concat(dependencies.after),
+        ROA.filter(hasMigrations),
         RNEA.fromReadonlyArray,
       ),
     ),

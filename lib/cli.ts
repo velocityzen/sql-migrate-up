@@ -4,16 +4,16 @@ import { constVoid, flow, pipe } from "fp-ts/function";
 import * as O from "fp-ts/Option";
 import * as T from "fp-ts/Task";
 import * as TE from "fp-ts/TaskEither";
+import { ParserOptions } from "sql-parser-cst";
 import { version } from "../package.json";
+import { checkMigrations } from "./check";
 import { createActionFor } from "./commander";
 import { createMigration, CreateMigrationContext } from "./create";
 import { migrateUp } from "./migrate";
 import { getCLIOptions } from "./options";
 import { MigrationsContext, Options } from "./types";
-import { checkMigrations } from "./check";
-import { ParserOptions } from "sql-parser-cst";
 
-export function cli(options: Options, parserOptions: ParserOptions) {
+export function cli(options: Options, parserOptions?: ParserOptions) {
   const { schemaOption, tableOption, folderOption, runOption, forceOption } =
     getCLIOptions(options);
 
@@ -33,7 +33,7 @@ export function cli(options: Options, parserOptions: ParserOptions) {
             TE.of({ ...options, ...context }),
             TE.tapIO(({ schema }) =>
               C.info(
-                `Appling migrations ${schema !== null ? `to ${schema}` : ""}`,
+                `Appling migrations ${schema !== null ? `to schema "${schema}"` : ""}`,
               ),
             ),
             TE.flatMap((context) =>
@@ -79,10 +79,11 @@ export function cli(options: Options, parserOptions: ParserOptions) {
           TE.of({ ...options, ...context }),
           TE.tapIO(({ schema }) =>
             C.info(
-              `Checking migrations ${schema !== null ? `for ${schema}` : ""}`,
+              `Checking migrations ${schema !== null ? `for schema "${schema}"` : ""}`,
             ),
           ),
           TE.flatMap((context) => checkMigrations(context, parserOptions)),
+          TE.tapIO(() => C.info("Clean")),
         ),
       ),
     );

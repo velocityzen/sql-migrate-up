@@ -7,7 +7,10 @@ import { toMessage } from "./helpers";
  *  Throws on left.
  **/
 export function createActionFor<R, A = Record<string, unknown>, C = void>(
-  createTask: (args: A, context: C) => TE.TaskEither<Error, R>,
+  createTask: (
+    args: A,
+    context: C,
+  ) => TE.TaskEither<Error | readonly Error[], R>,
   errorMessage = "Failed",
 ) {
   return async (args: A, context: C) => {
@@ -15,7 +18,10 @@ export function createActionFor<R, A = Record<string, unknown>, C = void>(
     const result = await task();
 
     if (E.isLeft(result)) {
-      console.info(`${errorMessage}: `, toMessage(result.left));
+      const errors = Array.isArray(result.left) ? result.left : [result.left];
+      errors.forEach((error) => {
+        console.info(`${errorMessage}: `, toMessage(error), "\n");
+      });
       process.exit(1);
     }
   };
