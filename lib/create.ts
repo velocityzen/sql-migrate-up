@@ -1,16 +1,20 @@
-import fs from "fs/promises";
+import { pipe } from "fp-ts/function";
+import * as TE from "fp-ts/TaskEither";
+import { DateTime } from "luxon";
 import path from "path";
 import slugify from "slugify";
-import { mkdirp } from "mkdirp";
-import { DateTime } from "luxon";
-
-import { CreateMigrationContext } from "./types";
+import { mkdirp, touch } from "./fs";
 import { getMigrationsPath } from "./migrations";
+import { MigrationsContext } from "./types";
 
-export async function createMigration(
+export interface CreateMigrationContext extends MigrationsContext {
+  runAlways?: boolean;
+}
+
+export function createMigration(
   context: CreateMigrationContext,
   migrationName: string,
-): Promise<string> {
+): TE.TaskEither<Error, string> {
   const nextMigrationNumber = DateTime.utc().toUnixInteger();
   const nextMigrationName = slugify(migrationName, {
     replacement: "_",
@@ -24,9 +28,9 @@ export async function createMigration(
     `${nextMigrationNumber}_${nextMigrationName}.sql`,
   );
 
-  await mkdirp(migrationPath);
-  const fd = await fs.open(fullMigrationPath, "a"); // use `a` so we do not overwrite existing migration file`
-  await fd.close();
-
-  return fullMigrationPath;
+  return pipe(
+    mkdirp(migrationPath),
+    TE.flatMap(() => touch(fullMigrationPath)),
+    TE.as(fullMigrationPath),
+  );
 }

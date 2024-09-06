@@ -6,10 +6,8 @@ import { DependenciesFile } from "../lib/dependencies";
 /**
  * returns value if succeed or undefined otherwise
  **/
-function decode<A, O>(
-  { decode }: t.Type<A, O, unknown>,
-  value: unknown,
-): undefined | A {
+// eslint-disable-next-line @typescript-eslint/unbound-method
+function decode<A, O>({ decode }: t.Type<A, O>, value: unknown): undefined | A {
   return pipe(
     value,
     decode,

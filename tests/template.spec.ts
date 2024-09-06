@@ -1,25 +1,38 @@
-import { applyData } from "../lib/template";
+/*  eslint-disable @typescript-eslint/no-confusing-void-expression */
+import { pipe } from "fp-ts/function";
+import { expectLeftEither, expectRightEither } from "jest-fp-ts-matchers";
+import { applyTemplateData } from "../lib/template";
 
 describe("template", () => {
-  test("applies data", () => {
-    const res = applyData("file", "{{var}}", { var: "value" });
-    expect(res).toBe("value");
-  });
+  test("applies data", () =>
+    pipe(
+      "{{var}}",
+      applyTemplateData({ var: "value" }),
+      expectRightEither((res) => {
+        expect(res).toBe("value");
+      }),
+    ));
 
-  test("applies more data", () => {
-    const res = applyData("file", "{{var}}  {{other}}", {
-      var: "value1",
-      other: "value2",
-    });
-    expect(res).toBe("value1  value2");
-  });
-
-  test("throws error when missing data", () => {
-    const test = () =>
-      applyData("file", "{{var}}  {{other}}", {
+  test("applies more data", () =>
+    pipe(
+      "{{var}}  {{other}}",
+      applyTemplateData({
         var: "value1",
-      });
+        other: "value2",
+      }),
+      expectRightEither((res) => {
+        expect(res).toBe("value1  value2");
+      }),
+    ));
 
-    expect(test).toThrow(`Found extra parameters (other) in "file"`);
-  });
+  test("error when missing data", () =>
+    pipe(
+      "{{var}}  {{other}}",
+      applyTemplateData({
+        var: "value1",
+      }),
+      expectLeftEither((err) => {
+        expect(err.message).toBe(`Found extra parameters (other)`);
+      }),
+    ));
 });

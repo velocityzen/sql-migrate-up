@@ -1,6 +1,7 @@
-export type { Parameters, RunContext, MigrationsContext } from "./types";
-export { runMigrations } from "./migrate";
+export type { Parameters, Context, MigrationsContext } from "./types";
+export { migrateUp } from "./migrate";
+// export { checkMigrations, type CheckContext } from "./check";
 
-export { runCli } from "./cli";
-import { runCli } from "./cli";
-export default runCli;
+export { cli } from "./cli";
+import { cli } from "./cli";
+export default cli;

@@ -1,22 +1,37 @@
+import * as E from "fp-ts/Either";
+import * as TE from "fp-ts/TaskEither";
 import { Parameters } from "./types";
+import { pipe } from "fp-ts/lib/function";
+import { addFileNameToErrorMessage, readFile } from "./fs";
 
-export function applyData(
-  migrationFile: string,
-  templateSql: string,
+export function loadTemplate(
+  filePath: string,
   data: Parameters,
-): string {
-  const sql = Array.from(Object.entries(data)).reduce(
-    (sql, [key, value]) => (value ? sql.replaceAll(`{{${key}}}`, value) : sql),
-    templateSql,
+): TE.TaskEither<Error, string> {
+  return pipe(
+    filePath,
+    readFile,
+    TE.flatMapEither(applyTemplateData(data)),
+    TE.mapError(addFileNameToErrorMessage(filePath)),
   );
+}
 
-  const extraParameters = Array.from(sql.matchAll(/{{([-a-zA-Z0-9_]+)}}/gi));
-  if (extraParameters.length > 0) {
-    const extraNames = extraParameters.map((tuple) => tuple[1]);
-    throw new Error(
-      `Found extra parameters (${extraNames.join(",")}) in "${migrationFile}"`,
+export function applyTemplateData(
+  data: Parameters,
+): (templateSql: string) => E.Either<Error, string> {
+  return (templateSql) => {
+    const sql = Array.from(Object.entries(data)).reduce(
+      (sql, [key, value]) =>
+        value ? sql.replaceAll(`{{${key}}}`, value) : sql,
+      templateSql,
     );
-  }
 
-  return sql;
+    const extraParameters = Array.from(sql.matchAll(/{{([-a-zA-Z0-9_]+)}}/gi));
+    if (extraParameters.length > 0) {
+      const extraNames = extraParameters.map((tuple) => tuple[1]);
+      return E.left(Error(`Found extra parameters (${extraNames.join(",")})`));
+    }
+
+    return E.right(sql);
+  };
 }

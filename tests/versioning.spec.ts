@@ -1,80 +1,126 @@
-import Database from "better-sqlite3";
-import { runMigrations, RunContext } from "../lib";
-import { getCompletedMigrationsPromise } from "../lib/migrate";
+import * as T from "fp-ts/Task";
+import { pipe } from "fp-ts/function";
+import * as TE from "fp-ts/TaskEither";
+import { Context, migrateUp } from "../lib";
 import { MigrationRow } from "../lib/types";
 import { version } from "../package.json";
+import { createSqlLiteClient, queryAll, queryExec } from "./db";
+import { testTaskEither } from "./jest";
+import { expectRightTaskEither } from "jest-fp-ts-matchers";
 
 describe("Versioning", () => {
-  const db = new Database(":memory:");
-  const context: RunContext = {
+  const db = createSqlLiteClient(":memory:");
+
+  const context: Context = {
     schema: null,
     table: "migrations",
     folder: "./tests/migrations",
     now: "datetime('now')",
     useVersioning: true,
     version,
-    parameters: () => Promise.resolve({ table: "test_table" }),
-    query: (query, isSelect) =>
-      new Promise((resolve) => {
-        if (isSelect) {
-          resolve(db.prepare(query).all());
-          return;
-        }
-
-        resolve(db.exec(query));
-      }),
+    parameters: () => TE.of({ table: "test_table" }),
+    select: <T>(sql: string) => pipe(db, queryAll<T>(sql), TE.fromEither),
+    exec: (sql) => pipe(db, queryExec(sql), TE.fromEither),
   };
 
   afterAll(() => {
     db.close();
   });
 
-  test("run everything", async () => {
-    const migrations = await runMigrations(context);
-    expect(migrations).toBe(3);
+  test(
+    "run everything",
+    testTaskEither(() =>
+      pipe(
+        context,
+        migrateUp,
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(3);
+        }),
+        T.map(() =>
+          pipe(
+            db,
+            queryAll<{ test_column: string }>("select * from test_view;"),
+            (a) => a,
+          ),
+        ),
+        expectRightTaskEither((rows) => {
+          expect(rows).toEqual([{ test_column: "test_value" }]);
+        }),
+        T.map(() =>
+          pipe(db, queryAll<MigrationRow>("select * from migrations;")),
+        ),
+        expectRightTaskEither((migrationRows) => {
+          expect(migrationRows.length).toEqual(3);
+          expect(migrationRows[0].name).toEqual(
+            "tests/migrations/run-once/01-table.sql",
+          );
+          expect(migrationRows[1].name).toEqual(
+            "tests/migrations/run-once/02-insert.sql",
+          );
+          expect(migrationRows[2].name).toEqual(`version-${version}`);
+        }),
+      ),
+    ),
+  );
 
-    const rows = db.prepare("select * from test_view;").all();
-    expect(rows).toEqual([{ test_column: "test_value" }]);
+  test(
+    "run everything again, and check that nothing was run again",
+    testTaskEither(() =>
+      pipe(
+        context,
+        migrateUp,
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(0);
+        }),
+        T.map(() =>
+          pipe(db, queryAll<MigrationRow>("select * from migrations;")),
+        ),
+        expectRightTaskEither((migrationRows) => {
+          expect(migrationRows.length).toEqual(3);
+        }),
+      ),
+    ),
+  );
 
-    const migrationRows = db
-      .prepare("select * from migrations;")
-      .all() as MigrationRow[];
+  test(
+    "change version, run everything again, and check run-always",
+    testTaskEither(() =>
+      pipe(
+        migrateUp({ ...context, version: "new" }),
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(1);
+        }),
+        T.map(() =>
+          pipe(db, queryAll<MigrationRow>("select * from migrations;")),
+        ),
+        expectRightTaskEither((migrationRows) => {
+          expect(migrationRows.length).toEqual(4);
+        }),
+      ),
+    ),
+  );
 
-    expect(migrationRows.length).toEqual(3);
-    expect(migrationRows[0].name).toEqual(
-      "tests/migrations/run-once/01-table.sql",
-    );
-    expect(migrationRows[1].name).toEqual(
-      "tests/migrations/run-once/02-insert.sql",
-    );
-    expect(migrationRows[2].name).toEqual(`version-${version}`);
-  });
+  test(
+    "run new version again, and check that nothing was run again",
+    testTaskEither(() =>
+      pipe(
+        migrateUp({ ...context, version: "new" }),
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(0);
+        }),
+      ),
+    ),
+  );
 
-  test("run everything again, and check that nothing was run again", async () => {
-    const migrations = await runMigrations(context);
-    expect(migrations).toBe(0);
-  });
-
-  test("change version, run everything again, and check run-always", async () => {
-    const migrations = await runMigrations({ ...context, version: "new" });
-    expect(migrations).toBe(1);
-
-    const migrationRows = await getCompletedMigrationsPromise(context);
-    expect(migrationRows.length).toBe(4);
-  });
-
-  test("run new version again, and check that nothing was run again", async () => {
-    const migrations = await runMigrations({ ...context, version: "new" });
-    expect(migrations).toBe(0);
-  });
-
-  test("run new version again with force flag", async () => {
-    const migrations = await runMigrations({
-      ...context,
-      version: "new",
-      force: true,
-    });
-
-    expect(migrations).toBe(1);
-  });
+  test(
+    "run new version again with force flag",
+    testTaskEither(() =>
+      pipe(
+        migrateUp({ ...context, version: "new", force: true }),
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(1);
+        }),
+      ),
+    ),
+  );
 });

@@ -36,7 +36,7 @@ export type DependenciesFile = t.TypeOf<typeof DependenciesFile>;
 function Json<A, O = A, I = unknown>(
   codec: t.Type<A, O, I>,
   name = `${codec.name} from JSON`,
-): t.Type<A, string, unknown> {
+): t.Type<A, string> {
   return new t.Type(
     name,
     codec.is,

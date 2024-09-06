@@ -1,13 +1,17 @@
 import { program } from "commander";
+import * as C from "fp-ts/Console";
+import { constVoid, flow, pipe } from "fp-ts/function";
+import * as O from "fp-ts/Option";
+import * as T from "fp-ts/Task";
+import * as TE from "fp-ts/TaskEither";
 import { version } from "../package.json";
-
-import { Options, MigrationsContext, CreateMigrationContext } from "./types";
+import { createActionFor } from "./commander";
+import { createMigration, CreateMigrationContext } from "./create";
+import { migrateUp } from "./migrate";
 import { getCLIOptions } from "./options";
-import { createMigration } from "./create";
-import { runMigrations } from "./migrate";
-import { toMessage } from "./helpers";
+import { MigrationsContext, Options } from "./types";
 
-export function runCli(options: Options) {
+export function cli(options: Options) {
   const { schemaOption, tableOption, folderOption, runOption, forceOption } =
     getCLIOptions(options);
 
@@ -20,34 +24,58 @@ export function runCli(options: Options) {
     .addOption(tableOption)
     .addOption(folderOption)
     .addOption(forceOption)
-    .action(async (context: MigrationsContext) => {
-      try {
-        console.info(
-          `Appling migrations ${
-            context.schema !== null ? `to ${context.schema}` : ""
-          }`,
-        );
+    .action(
+      createActionFor(
+        (context: MigrationsContext) =>
+          pipe(
+            TE.of({ ...options, ...context }),
+            TE.tapIO(({ schema }) =>
+              C.info(
+                `Appling migrations ${schema !== null ? `to ${schema}` : ""}`,
+              ),
+            ),
+            TE.flatMap((context) =>
+              migrateUp(context, (name) => C.info(`> ${name}`)),
+            ),
+            TE.tapIO(
+              flow(
+                O.fromPredicate(Boolean),
+                O.match(
+                  () => C.info("No migrations to run. DB is up to date."),
+                  (totalMigrationsApplied) =>
+                    C.info(
+                      `${totalMigrationsApplied} migrations applied. DB is up to date.`,
+                    ),
+                ),
+              ),
+            ),
+            T.tap(() =>
+              pipe(
+                options.end,
+                O.fromNullable,
+                O.match(
+                  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+                  () => T.of(constVoid()),
+                  (end) => end(),
+                ),
+              ),
+            ),
+          ),
+        "Failed to run migration",
+      ),
+    );
 
-        const runnedMigrationsNumber = await runMigrations(
-          { ...options, ...context },
-          (name) => {
-            console.info(`> ${name}`);
-          },
-        );
-        if (runnedMigrationsNumber === 0) {
-          console.info("No migrations to run. DB is up to date.");
-        } else {
-          console.info(
-            `${runnedMigrationsNumber} migrations applied. DB is up to date.`,
-          );
-        }
-        await options.end?.();
-      } catch (error) {
-        await options.end?.();
-        console.error("Failed to run migrations:", toMessage(error));
-        process.exit(1);
-      }
-    });
+  // program
+  //   .command("check")
+  //   .description("checks all migrations for errors")
+  //   .addOption(schemaOption)
+  //   .addOption(tableOption)
+  //   .addOption(folderOption)
+  //   .action(
+  //     createActionFor((args: MigrationsContext) =>
+  //       checkMigrations({ ...options, ...args }),
+  //     ),
+  //   );
 
   program
     .command("create")
@@ -57,15 +85,18 @@ export function runCli(options: Options) {
     .addOption(folderOption)
     .addOption(runOption)
     .argument("[name...]", "name of the new migration", "new migration")
-    .action(async (name: string[], context: CreateMigrationContext) => {
-      try {
-        const newMigrationName = await createMigration(context, name.join(" "));
-        console.info(`New migration has been created at: ${newMigrationName}`);
-      } catch (error) {
-        console.error("Failed to create migration:", toMessage(error));
-        process.exit(1);
-      }
-    });
+    .action(
+      createActionFor(
+        (name: string[], context: CreateMigrationContext) =>
+          pipe(
+            createMigration(context, name.join(" ")),
+            TE.tapIO((newMigrationName) =>
+              C.info(`New migration has been created at: ${newMigrationName}`),
+            ),
+          ),
+        "Failed to create migration",
+      ),
+    );
 
   program.parse();
 }

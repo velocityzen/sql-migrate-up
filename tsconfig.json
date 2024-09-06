@@ -19,7 +19,101 @@
     "strict": true,
     "target": "es2020",
     "typeRoots": ["node_modules/@types", "./types"],
-    "declarationDir": "./build"
+    "declarationDir": "./build",
+    "plugins": [
+      {
+        "name": "@unsplash/ts-namespace-import-plugin",
+        "namespaces": {
+          "A": {
+            "importPath": "fp-ts/Array"
+          },
+          "B": {
+            "importPath": "fp-ts/boolean"
+          },
+          "C": {
+            "importPath": "fp-ts/Console"
+          },
+          "D": {
+            "importPath": "fp-ts/Date"
+          },
+          "E": {
+            "importPath": "fp-ts/Either"
+          },
+          "IO": {
+            "importPath": "fp-ts/IO"
+          },
+          "IOE": {
+            "importPath": "fp-ts/IOEither"
+          },
+          "IOO": {
+            "importPath": "fp-ts/IOOption"
+          },
+          "J": {
+            "importPath": "fp-ts/Json"
+          },
+          "N": {
+            "importPath": "fp-ts/number"
+          },
+          "NEA": {
+            "importPath": "fp-ts/NonEmptyArray"
+          },
+          "O": {
+            "importPath": "fp-ts/Option"
+          },
+          "P": {
+            "importPath": "fp-ts/Predicate"
+          },
+          "R": {
+            "importPath": "fp-ts/Reader"
+          },
+          "RA": {
+            "importPath": "fp-ts/ReadonlyArray"
+          },
+          "RE": {
+            "importPath": "fp-ts/ReaderEither"
+          },
+          "REC": {
+            "importPath": "fp-ts/Record"
+          },
+          "RIO": {
+            "importPath": "fp-ts/ReaderIO"
+          },
+          "RNEA": {
+            "importPath": "fp-ts/ReadonlyNonEmptyArray"
+          },
+          "RT": {
+            "importPath": "fp-ts/ReaderTask"
+          },
+          "RTE": {
+            "importPath": "fp-ts/ReaderTaskEither"
+          },
+          "S": {
+            "importPath": "fp-ts/string"
+          },
+          "SET": {
+            "importPath": "fp-ts/Set"
+          },
+          "T": {
+            "importPath": "fp-ts/Task"
+          },
+          "TE": {
+            "importPath": "fp-ts/TaskEither"
+          },
+          "TT": {
+            "importPath": "fp-ts/TaskThese"
+          },
+          "TO": {
+            "importPath": "fp-ts/TaskOption"
+          },
+          "TU": {
+            "importPath": "fp-ts/Tuple"
+          },
+          "t": {
+            "importPath": "io-ts"
+          }
+        }
+      }
+    ]
   },
   "ts-node": {
     "compilerOptions": {

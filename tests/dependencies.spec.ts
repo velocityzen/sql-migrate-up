@@ -1,62 +1,75 @@
-import Database from "better-sqlite3";
-import { runMigrations, RunContext } from "../lib";
+import { pipe } from "fp-ts/lib/function";
+import * as T from "fp-ts/Task";
+import * as TE from "fp-ts/TaskEither";
+import { expectRightTaskEither } from "jest-fp-ts-matchers";
+import { Context, migrateUp } from "../lib";
 import { MigrationRow } from "../lib/types";
-import { version } from "../package.json";
+import { createSqlLiteClient, queryAll, queryExec } from "./db";
+import { testTaskEither } from "./jest";
 
 describe("Dependencies", () => {
-  const db = new Database(":memory:");
-  const context: RunContext = {
+  const db = createSqlLiteClient(":memory:");
+
+  const context: Context = {
     schema: null,
     table: "migrations",
     folder: "./tests/migrations-with-dependencies",
     now: "datetime('2024-01-01')",
-    version,
-    parameters: () => Promise.resolve({ table: "test_table" }),
-    query: (query, isSelect) =>
-      new Promise((resolve) => {
-        if (isSelect) {
-          resolve(db.prepare(query).all());
-          return;
-        }
-
-        resolve(db.exec(query));
-      }),
+    parameters: () => TE.of({ table: "test_table" }),
+    select: <T>(sql: string) => pipe(db, queryAll<T>(sql), TE.fromEither),
+    exec: (sql) => pipe(db, queryExec(sql), TE.fromEither),
   };
 
   afterAll(() => {
     db.close();
   });
 
-  test("run everything", async () => {
-    const migrations = await runMigrations(context);
-    expect(migrations).toBe(6);
+  test(
+    "run everything",
+    testTaskEither(() =>
+      pipe(
+        context,
+        migrateUp,
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(6);
+        }),
+        T.map(() =>
+          pipe(db, queryAll<MigrationRow>("select * from migrations;")),
+        ),
+        expectRightTaskEither((migrationRows) => {
+          expect(migrationRows).toEqual([
+            {
+              created_at: "2024-01-01 00:00:00",
+              name: "tests/migrations-with-dependencies/run-once/01-table.sql",
+            },
+            {
+              created_at: "2024-01-01 00:00:00",
+              name: "tests/migrations-with-dependencies/run-once/02-insert.sql",
+            },
+            {
+              created_at: "2024-01-01 00:00:00",
+              name: "tests/migrations/run-once/01-table.sql",
+            },
+            {
+              created_at: "2024-01-01 00:00:00",
+              name: "tests/migrations/run-once/02-insert.sql",
+            },
+          ]);
+        }),
+      ),
+    ),
+  );
 
-    const migrationRows = db
-      .prepare("select * from migrations;")
-      .all() as MigrationRow[];
-
-    expect(migrationRows).toEqual([
-      {
-        created_at: "2024-01-01 00:00:00",
-        name: "tests/migrations-with-dependencies/run-once/01-table.sql",
-      },
-      {
-        created_at: "2024-01-01 00:00:00",
-        name: "tests/migrations-with-dependencies/run-once/02-insert.sql",
-      },
-      {
-        created_at: "2024-01-01 00:00:00",
-        name: "tests/migrations/run-once/01-table.sql",
-      },
-      {
-        created_at: "2024-01-01 00:00:00",
-        name: "tests/migrations/run-once/02-insert.sql",
-      },
-    ]);
-  });
-
-  test("run everything again, and check that nothing was run again", async () => {
-    const migrations = await runMigrations(context);
-    expect(migrations).toBe(2);
-  });
+  test(
+    "run everything again, and check run-always",
+    testTaskEither(() =>
+      pipe(
+        context,
+        migrateUp,
+        expectRightTaskEither((migrations) => {
+          expect(migrations).toBe(2);
+        }),
+      ),
+    ),
+  );
 });

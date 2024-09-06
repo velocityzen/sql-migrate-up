@@ -1,192 +1,125 @@
-import fs from "fs/promises";
-
 import * as AP from "fp-ts/Apply";
 import * as E from "fp-ts/Either";
+import * as IO from "fp-ts/IO";
 import * as O from "fp-ts/Option";
-import * as RA from "fp-ts/ReadonlyArray";
 import * as TE from "fp-ts/TaskEither";
-import { pipe, identity, constNull } from "fp-ts/function";
+import { constVoid, pipe, flow } from "fp-ts/function";
 
+import { getTable } from "./helpers";
 import {
-  MigrationRow,
-  Parameters,
-  RunContext,
-  RunContextUseVersioning,
-  doUseVersioning,
-} from "./types";
-
-import {
-  filterCompleted,
+  applyMigrationsWith,
+  filterCompletedFor,
   getAllMigrations,
-  getDbMigrationsFiles,
-  hasMigrations,
+  getMigrationsPath,
+  queryCompletedMigrations,
 } from "./migrations";
-import { createMigrationError, getTable } from "./helpers";
-import { applyData } from "./template";
+import { Context, ContextUseVersioning, useVersioning } from "./types";
 
-export async function runMigrations(
-  context: RunContext,
-  onMigrationApplied?: (fileName: string) => void | Promise<void>,
-): Promise<number> {
-  if (doUseVersioning(context) && !context.version) {
-    throw new Error("useVersioning is set to true, but version is not defined");
+export function migrateUp(
+  context: Context,
+  onMigrationApplied?: (fileName: string) => IO.IO<void>,
+): TE.TaskEither<Error, number> {
+  if (useVersioning(context) && !context.version) {
+    return TE.left(
+      Error("useVersioning is set to true, but version is not defined"),
+    );
   }
-
-  await ensureSchemaAndMigrationTable(context);
-
-  const getMigrations = pipe(
-    context,
-    getNewMigrations,
-    TE.match(
-      (error) => {
-        throw error;
-      },
-      O.match(constNull, identity),
-    ),
-  );
-
-  const migrations = await getMigrations();
-  if (!migrations || migrations.length === 0) {
-    return 0;
-  }
-
-  const migrationData = await context.parameters(context);
-
-  let total = 0;
-  for await (const m of migrations) {
-    const { once, always } = m;
-
-    for await (const migrationFile of once) {
-      await runMigration(context, migrationFile, migrationData);
-      total++;
-      if (onMigrationApplied) {
-        await onMigrationApplied(migrationFile);
-      }
-    }
-
-    for await (const migrationFile of always) {
-      await runMigration(context, migrationFile, migrationData, false);
-      total++;
-      if (onMigrationApplied) {
-        await onMigrationApplied(migrationFile);
-      }
-    }
-  }
-
-  if (doUseVersioning(context)) {
-    await saveVersion(context);
-  }
-
-  return total;
-}
-
-async function runMigration(
-  { schema, table, query, now }: RunContext,
-  migrationFile: string,
-  data: Parameters,
-  saveMigration = true,
-) {
-  try {
-    const templateSql = await fs.readFile(migrationFile, "utf8");
-    const migrationSql = applyData(migrationFile, templateSql, data);
-    await query(migrationSql);
-
-    if (saveMigration) {
-      await query(`insert into
-        ${getTable(schema, table)}
-        values ('${migrationFile}', ${now ? now : "CURRENT_TIMESTAMP"});
-      `);
-    }
-  } catch (e) {
-    if (!(e instanceof Error)) {
-      throw e;
-    }
-
-    const error = createMigrationError(migrationFile, e);
-    throw error;
-  }
-}
-
-function getNewMigrations(context: RunContext) {
-  const getTogether = AP.sequenceT(TE.ApplyPar);
 
   return pipe(
-    getTogether(getCompletedMigrations(context), getAllMigrations(context)),
-    TE.map(([rows, migrations]) =>
+    TE.of(context),
+    TE.tap(ensureSchemaExists),
+    TE.tap(ensureMigrationsTableExists),
+    TE.bind("migrations", getMigrationsToRun),
+    TE.bind("totalMigrationsApplied", (context) =>
       pipe(
-        getDbMigrationsFiles(rows, context),
-        O.map((completed) =>
-          pipe(
-            migrations,
-            RA.map(filterCompleted(completed)),
-            RA.filter(hasMigrations),
-          ),
+        context.migrations,
+        O.match(
+          () => TE.of(0),
+          applyMigrationsWith(context, onMigrationApplied),
         ),
       ),
     ),
+    TE.tap(
+      flow(
+        O.fromPredicate((context) => context.totalMigrationsApplied > 0),
+        O.flatMap(O.fromPredicate(useVersioning)),
+        // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+        O.match(() => TE.right(constVoid()), saveVersion),
+      ),
+    ),
+    TE.map(({ totalMigrationsApplied }) => totalMigrationsApplied),
   );
 }
 
-export async function getCompletedMigrationsPromise({
-  query,
+function ensureSchemaExists({
+  exec,
+  schema,
+}: Context): TE.TaskEither<Error, void> {
+  return pipe(
+    schema,
+    O.fromNullable,
+    O.match(
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+      () => TE.of(constVoid()),
+      (schema) => exec(`create schema if not exists ${schema};`),
+    ),
+  );
+}
+
+function ensureMigrationsTableExists({
+  exec,
   schema,
   table,
-}: RunContext): Promise<MigrationRow[]> {
-  const migrations = (await query(
-    `
-    select
-      name as "name",
-      created_at as "created_at"
-    from ${getTable(schema, table)}
-    order by created_at, name;
-  `,
-    true,
-  )) as MigrationRow[];
-
-  return migrations ?? [];
+}: Context): TE.TaskEither<Error, void> {
+  return exec(`
+    create table if not exists ${getTable(schema, table)} (
+      name text not null,
+      created_at timestamp not null
+    );
+  `);
 }
 
-const getCompletedMigrations = TE.tryCatchK(
-  getCompletedMigrationsPromise,
-  E.toError,
-);
-
-async function ensureSchemaAndMigrationTable(context: RunContext) {
-  await ensureSchemaExists(context);
-  await ensureMigrationsTableExists(context);
-}
-
-async function ensureSchemaExists({
-  query,
-  schema,
-}: RunContext): Promise<void> {
-  if (schema === null) {
-    return;
-  }
-
-  await query(`create schema if not exists ${schema};`);
-}
-
-async function ensureMigrationsTableExists({
-  query,
-  schema,
-  table,
-}: RunContext): Promise<void> {
-  await query(`create table if not exists ${getTable(schema, table)} (
-    name text not null,
-    created_at timestamp not null
-  );`);
-}
-
-async function saveVersion({
-  query,
+function saveVersion({
+  exec,
   schema,
   table,
   version,
   now,
-}: RunContextUseVersioning) {
-  await query(`insert into
-    ${getTable(schema, table)}
+}: ContextUseVersioning): TE.TaskEither<Error, void> {
+  return exec(`
+    insert into ${getTable(schema, table)}
     values ('version-${version}', ${now ? now : "CURRENT_TIMESTAMP"});
   `);
+}
+
+function getMigrationsToRun(context: Context) {
+  const applyParTE = AP.sequenceS(TE.ApplyPar);
+
+  return pipe(
+    applyParTE({
+      migrations: getAllMigrations(context),
+      completed: queryCompletedMigrations(context),
+    }),
+    TE.flatMapEither(({ migrations, completed }) =>
+      pipe(
+        migrations,
+        O.match(
+          () =>
+            E.left(
+              Error(`No migrations found at "${getMigrationsPath(context)}"`),
+            ),
+          (migrations) => E.right({ migrations, completed }),
+        ),
+      ),
+    ),
+    TE.map(({ migrations, completed }) =>
+      pipe(
+        completed,
+        O.match(
+          () => O.some(migrations), // if there is nothing completed just return everything
+          filterCompletedFor(context, migrations),
+        ),
+      ),
+    ),
+  );
 }
