@@ -317,7 +317,7 @@ export function applyMigrationsWith(
 }
 
 function applyMigrationWith(
-  { exec, schema, table, now }: Context,
+  { execute, schema, table, now }: Context,
   data: Parameters,
 ) {
   return ([filePath, saveMigration]: [string, boolean]): TE.TaskEither<
@@ -326,7 +326,7 @@ function applyMigrationWith(
   > =>
     pipe(
       loadTemplate(filePath, data),
-      TE.flatMap(exec),
+      TE.flatMap(execute),
       TE.flatMap(() =>
         pipe(
           saveMigration,
@@ -335,7 +335,7 @@ function applyMigrationWith(
             // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
             () => TE.right(constVoid()),
             () =>
-              exec(`
+              execute(`
                 insert into ${getTable(schema, table)}
                 values ('${filePath}', ${now ? now : "CURRENT_TIMESTAMP"});
               `),

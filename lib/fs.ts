@@ -33,7 +33,7 @@ export const readFile = TE.tryCatchK(
 
 export function addFileNameToErrorMessage<E extends Error>(file: string) {
   return (error: E): E => {
-    error.message += ` in "${file}"`;
+    error.message += ` File "${file}"`;
     return error;
   };
 }

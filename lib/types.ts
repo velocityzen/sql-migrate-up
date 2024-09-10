@@ -10,7 +10,7 @@ export type Parameters = Record<string, string>;
 export interface DbContext {
   parameters: (context: MigrationsContext) => TE.TaskEither<Error, Parameters>;
   select: <T>(sql: string) => TE.TaskEither<Error, T[]>;
-  exec: (sql: string) => TE.TaskEither<Error, void>;
+  execute: (sql: string) => TE.TaskEither<Error, void>;
   now?: string;
 }
 

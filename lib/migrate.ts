@@ -52,7 +52,7 @@ export function migrateUp(
 }
 
 function ensureSchemaExists({
-  exec,
+  execute,
   schema,
 }: Context): TE.TaskEither<Error, void> {
   return pipe(
@@ -61,17 +61,17 @@ function ensureSchemaExists({
     O.match(
       // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
       () => TE.of(constVoid()),
-      (schema) => exec(`create schema if not exists ${schema};`),
+      (schema) => execute(`create schema if not exists ${schema};`),
     ),
   );
 }
 
 function ensureMigrationsTableExists({
-  exec,
+  execute,
   schema,
   table,
 }: Context): TE.TaskEither<Error, void> {
-  return exec(`
+  return execute(`
     create table if not exists ${getTable(schema, table)} (
       name text not null,
       created_at timestamp not null
@@ -80,13 +80,13 @@ function ensureMigrationsTableExists({
 }
 
 function saveVersion({
-  exec,
+  execute,
   schema,
   table,
   version,
   now,
 }: ContextUseVersioning): TE.TaskEither<Error, void> {
-  return exec(`
+  return execute(`
     insert into ${getTable(schema, table)}
     values ('version-${version}', ${now ? now : "CURRENT_TIMESTAMP"});
   `);

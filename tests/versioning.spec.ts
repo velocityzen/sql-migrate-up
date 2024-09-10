@@ -20,7 +20,7 @@ describe("Versioning", () => {
     version,
     parameters: () => TE.of({ table: "test_table" }),
     select: <T>(sql: string) => pipe(db, queryAll<T>(sql), TE.fromEither),
-    exec: (sql) => pipe(db, queryExec(sql), TE.fromEither),
+    execute: (sql) => pipe(db, queryExec(sql), TE.fromEither),
   };
 
   afterAll(() => {
