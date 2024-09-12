@@ -6,7 +6,7 @@ import * as T from "fp-ts/Task";
 import * as TE from "fp-ts/TaskEither";
 import { ParserOptions } from "sql-parser-cst";
 import { version } from "../package.json";
-import { checkMigrations } from "./check";
+import { testMigrations } from "./test";
 import { createActionFor } from "./commander";
 import { createMigration, CreateMigrationContext } from "./create";
 import { migrateUp } from "./migrate";
@@ -68,10 +68,9 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
     );
 
   program
-    .command("check")
-    .description("checks all migrations for errors")
+    .command("test")
+    .description("tests all migrations for errors")
     .addOption(schemaOption)
-    .addOption(tableOption)
     .addOption(folderOption)
     .action(
       createActionFor((context: MigrationsContext) =>
@@ -82,7 +81,7 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
               `Checking migrations ${schema !== null ? `for schema "${schema}"` : ""}`,
             ),
           ),
-          TE.flatMap((context) => checkMigrations(context, parserOptions)),
+          TE.flatMap((context) => testMigrations(context, parserOptions)),
           TE.tapIO(() => C.info("Clean")),
         ),
       ),

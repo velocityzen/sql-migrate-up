@@ -13,24 +13,69 @@ Tested with SQLite, PostgreSQL, Snowflake
 
 # Usage
 
+## fp-ts version
+
 Here is an example of your `migrate` command:
 
 ```typescript
-import { runCli } from "sql-migrate-up";
-import { getDbClient, stopDbClient } from "./client";
+import * as TE from "fp-ts/TaskEither";
+import * as T from "fp-ts/Task";
+import { pipe } from "fp-ts/lib/function";
+import { cli } from "sql-migrate-up";
 
-runCli({
+// this is your db client dependecy implementation
+import { withDbClient } from "./client";
+
+cli({
   schema: "public",
   folder: "./migrations",
   table: "migrations",
-  parameters: async ({ schema }) => ({ schema }),
-  query: async (query) => {
-    const client = getDbClient();
-    return client(query);
-  },
-  end: stopDbClient,
+  parameters: ({ schema }) => TE.of({ schema }),
+  select: <T>(sql: string) =>
+    pipe(
+      withDbClient(),
+      TE.flatMap(({ select }) => select<T>(sql)),
+    ),
+  execute: (sql: string) =>
+    pipe(
+      withDbClient(),
+      TE.flatMap(({ execute }) => execute(sql)),
+      TE.asUnit,
+    ),
+  end: () =>
+    pipe(
+      withDbClient(),
+      TE.flatMap(({ end }) => end()),
+      T.asUnit,
+    ),
 });
 ```
+
+## Promise version
+
+```typescript
+import { cliPromise } from "sql-migrate-up";
+
+// this is your db client dependecy implementation
+import { withDbClient } from "./client";
+
+const db = withDbClient()
+
+cliPromise({
+  schema: "public",
+  folder: "./migrations",
+  table: "migrations",
+  parameters: ({ schema }) => Promise.resolve({ schema }),
+  select: <T>(sql: string) => Promise.resolve(db.select<T>(sql)),
+  execute: (sql) =>
+    new Promise((resolve) => {
+      db.exec(sql);
+      resolve();
+    }),
+  end: () => Promise.resolve(db.end());
+});
+```
+
 
 The example above is in TypeScript, use your favorite build tool to make an executable script or simply add it to package.json scripts section.
 
@@ -46,6 +91,7 @@ Options:
 
 Commands:
   up [options]                run all migrations
+  test [options]              tests all migrations for errors
   create [options] [name...]  create a new migration file
   help [command]              display help for command
 ```
@@ -57,6 +103,33 @@ All commands take the following arguments to override default values:
 - --schema <string> schema to migrate
 - --table <string> migrations history table name
 - --folder <string> folder with migrations files
+
+## Test migrations
+
+You can test all of the migrations to have all the paramters and, optionaly, syntax errors
+
+```
+❯ ./migrate test --schema <schema>
+```
+
+To turn on the syntax errors add parser options as a second argument for your cli implementation like this:
+
+```typescript
+import { cli } from "sql-migrate-up";
+
+cli({...}, { dialect: "sqlite" });
+
+```
+
+Syntax check only supports:
+
+* SQLite - full support.
+* BigQuery - full support.
+* MySQL - experimental.
+* MariaDB - experimental.
+* PostgreSQL - experimental.
+
+For the progress you can follow [sql-parser-cst](https://github.com/nene/sql-parser-cst)
 
 ## run-once vs. run-always
 
@@ -71,34 +144,43 @@ All migrations are split into two categories:
 
 ## SQLUp Options
 
-- name, <string> ("migrate") - the name of the script
-- version, <string> ("version of this package") - version of the script
-- schema, <string | null> ("public") - schema, if schema is set to `null` to schema will be enforced
-- folder, <string> or <(schema: string) => string> ("./migrations") - folder with migrations files, or a functinon that returns a folder
-- table, <string> ("migrations") - the name of the table to keep the history of migration
-- now, <string> ("now()") - the sql function for getting current timestamp
-- _parameters_, async function that should resolve into a data object that will be applied to every migration file
-- _query_, async function that runs SQL
-- end, async function that will be run after all is done. The perfect place to close your connections
+- name, <string> ("migrate") - the name of the script.
+- version, <string> ("version of this package") - version of the script.
+- schema, <string | null> ("public") - schema, if schema is set to `null` to schema will be enforced.
+- folder, <string> or <(schema: string) => string> ("./migrations") - folder with migrations files, or a functinon that returns a folder.
+- table, <string> ("migrations") - the name of the table to keep the history of migration.
+- now, <string> ("now()") - the sql function for getting current timestamp.
+- _parameters_, async function that should resolve into a data object that will be applied to every migration file.
+- _select_, async function that returns results from your SQL db.
+- _execute_, async function that executes arbitrary SQL in your db and does not return results.
+- end, async function that will be run after all is done. The perfect place to close your connections.
 
-## API: runMigrations
+## API: migrateUp
 
-`runMigrations` take all the same arguments except `end`. Returns a number of applied migrations.
+`migrateUp` take all the same arguments except `end`. Returns a number of applied migrations.
 
 ```ts
-import { runMigrations } from "sql-migrate-up";
+import { migrateUp } from "sql-migrate-up"; // or migrateUpPromise
 
-import { getDbClient, stopDbClient } from "./client";
+// this is your db client dependecy implementation
+import { withDbClient } from "./client";
 
-const migrations = await runMigrations({
+const migrations = await migrateUp({
   schema: "public",
   folder: "./migrations",
   table: "migrations",
-  parameters: async ({ schema }) => ({ schema }),
-  query: async (query) => {
-    const client = getDbClient();
-    return client(query);
-  },
+  parameters: ({ schema }) => TE.of({ schema }),
+  select: <T>(sql: string) =>
+    pipe(
+      withDbClient(),
+      TE.flatMap(({ select }) => select<T>(sql)),
+    ),
+  execute: (sql: string) =>
+    pipe(
+      withDbClient(),
+      TE.flatMap(({ execute }) => execute(sql)),
+      TE.asUnit,
+    ),
 });
 ```
 

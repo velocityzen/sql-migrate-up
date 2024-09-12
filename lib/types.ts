@@ -20,13 +20,13 @@ export interface MigrationsContext {
   table: string;
 }
 
-interface OptionsUseVersioning {
+export interface OptionsUseVersioning {
   version: string;
   useVersioning: boolean;
   force: boolean;
 }
 
-interface OptionsVersion {
+export interface OptionsVersion {
   version?: string;
 }
 

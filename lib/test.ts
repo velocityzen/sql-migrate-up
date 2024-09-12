@@ -30,7 +30,7 @@ const parseSqlWith = (
     ),
   );
 
-export function checkMigrations(context: Context, options?: ParserOptions) {
+export function testMigrations(context: Context, options?: ParserOptions) {
   const parserOptions = O.fromNullable(options);
 
   return pipe(

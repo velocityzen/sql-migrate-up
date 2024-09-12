@@ -37,7 +37,6 @@ describe("Migrations", () => {
           pipe(
             db,
             queryAll<{ test_column: string }>("select * from test_view;"),
-            (a) => a,
           ),
         ),
         expectRightTaskEither((rows) => {

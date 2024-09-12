@@ -1,6 +1,6 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/TaskEither";
-import { checkMigrations, Context } from "../lib";
+import { testMigrations, Context } from "../lib";
 import { createSqlLiteClient, queryAll, queryExec } from "./db";
 import { testTaskEither } from "./jest";
 import { expectLeftTaskEither } from "jest-fp-ts-matchers";
@@ -26,7 +26,7 @@ describe("Check", () => {
     "full",
     testTaskEither(() =>
       pipe(
-        checkMigrations(context, { dialect: "sqlite" }),
+        testMigrations(context, { dialect: "sqlite" }),
         expectLeftTaskEither(() => {
           expect(true).toBe(true);
         }),
