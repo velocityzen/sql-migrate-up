@@ -43,7 +43,9 @@ export function queryCompletedMigrations({
 > {
   return pipe(
     select<Pick<MigrationRow, "name">>(`
-      select distinct name as "name"
+      select
+        name as "name",
+        created_at as "created_at"
       from ${getTable(schema, table)}
       order by created_at, name;
     `),
