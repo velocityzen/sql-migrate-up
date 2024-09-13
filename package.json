@@ -1,6 +1,6 @@
 {
   "name": "sql-migrate-up",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Simple SQL Migration tool",
   "main": "build/index.js",
   "types": "build/lib/index.d.ts",
