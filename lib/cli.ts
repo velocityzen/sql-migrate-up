@@ -14,8 +14,14 @@ import { getCLIOptions } from "./options";
 import { MigrationsContext, Options } from "./types";
 
 export function cli(options: Options, parserOptions?: ParserOptions) {
-  const { schemaOption, tableOption, folderOption, runOption, forceOption } =
-    getCLIOptions(options);
+  const {
+    schemaOption,
+    tableOption,
+    folderOption,
+    runOption,
+    useVersioningOption,
+    forceOption,
+  } = getCLIOptions(options);
 
   program.name(options.name ?? "migrate").version(options.version ?? version);
 
@@ -25,6 +31,7 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
     .addOption(schemaOption)
     .addOption(tableOption)
     .addOption(folderOption)
+    .addOption(useVersioningOption)
     .addOption(forceOption)
     .action(
       createActionFor(

@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import * as TE from "fp-ts/TaskEither";
 import * as E from "fp-ts/Either";
-import { LazyArg } from "fp-ts/lib/function";
+import { LazyArg } from "fp-ts/function";
 import { mkdirp as mkdirpPromise } from "mkdirp";
 
 export const mkdirp = TE.tryCatchK(mkdirpPromise, E.toError);

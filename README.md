@@ -188,6 +188,10 @@ const migrations = await migrateUp({
 
 This is advance option and you probably will never need it. However it is very usefull when you have mutliple parallel instances of the same script trying to migrate one schema.
 
+### Argument
+
+- --use-versioning,  sets the migrations to be in versioning mode.
+
 ### Options
 
 - _version_, <string> required version of your package
