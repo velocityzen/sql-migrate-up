@@ -22,7 +22,7 @@ export function applyTemplateData(
   return (templateSql) => {
     // check for empty migrations files
     if (templateSql.trim().length === 0) {
-      return E.left(Error("Found empty migration file"));
+      return E.left(Error("Found empty migration"));
     }
 
     const sql = Array.from(Object.entries(data)).reduce(
