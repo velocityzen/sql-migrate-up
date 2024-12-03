@@ -20,7 +20,7 @@ export function createActionFor<R, A = Record<string, unknown>, C = void>(
     if (E.isLeft(result)) {
       const errors = Array.isArray(result.left) ? result.left : [result.left];
       errors.forEach((error) => {
-        console.info(`${errorMessage}: `, toMessage(error), "\n");
+        console.info(`${errorMessage}: `, toMessage(error));
       });
       process.exit(1);
     }
