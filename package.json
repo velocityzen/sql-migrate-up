@@ -42,19 +42,19 @@
     "luxon": "^3.3.0",
     "mkdirp": "^3.0.0",
     "slugify": "^1.6.5",
-    "sql-parser-cst": "^0.28.1"
+    "sql-parser-cst": "^0.30.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
-    "@rollup/plugin-commonjs": "^26.0.0",
+    "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.0",
-    "@rollup/plugin-typescript": "^11.1.5",
+    "@rollup/plugin-typescript": "^12.0.0",
     "@types/better-sqlite3": "^7.6.4",
     "@types/eslint__js": "^8.42.3",
     "@types/jest": "^29.0.0",
     "@types/luxon": "^3.2.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "@unsplash/ts-namespace-import-plugin": "^1.0.0",
     "better-sqlite3": "^11.0.0",
     "eslint": "^9.0.0",
