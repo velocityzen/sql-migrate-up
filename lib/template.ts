@@ -1,7 +1,7 @@
 import * as E from "fp-ts/Either";
 import * as TE from "fp-ts/TaskEither";
 import { Parameters } from "./types";
-import { pipe } from "fp-ts/lib/function";
+import { pipe } from "fp-ts/function";
 import { addFileNameToErrorMessage, readFile } from "./fs";
 
 export function loadTemplate(
@@ -20,6 +20,11 @@ export function applyTemplateData(
   data: Parameters,
 ): (templateSql: string) => E.Either<Error, string> {
   return (templateSql) => {
+    // check for empty migrations files
+    if (templateSql.trim().length === 0) {
+      return E.left(Error("Found empty migration file"));
+    }
+
     const sql = Array.from(Object.entries(data)).reduce(
       (sql, [key, value]) =>
         value ? sql.replaceAll(`{{${key}}}`, value) : sql,
