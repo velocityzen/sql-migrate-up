@@ -6,11 +6,11 @@ import * as T from "fp-ts/Task";
 import * as TE from "fp-ts/TaskEither";
 import { ParserOptions } from "sql-parser-cst";
 import { version } from "../package.json";
-import { testMigrations } from "./test";
 import { createActionFor } from "./commander";
 import { createMigration, CreateMigrationContext } from "./create";
 import { migrateUp } from "./migrate";
 import { getCLIOptions } from "./options";
+import { testMigrations } from "./test";
 import { MigrationsContext, Options } from "./types";
 
 export function cli(options: Options, parserOptions?: ParserOptions) {
@@ -101,7 +101,7 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
     .addOption(tableOption)
     .addOption(folderOption)
     .addOption(runOption)
-    .argument("[name...]", "name of the new migration", "new migration")
+    .argument("[name...]", "name of the new migration", ["new migration"])
     .action(
       createActionFor(
         (name: string[], context: CreateMigrationContext) =>
@@ -110,6 +110,7 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
             TE.tapIO((newMigrationName) =>
               C.info(`New migration has been created at: ${newMigrationName}`),
             ),
+            TE.asUnit,
           ),
         "Failed to create migration",
       ),
