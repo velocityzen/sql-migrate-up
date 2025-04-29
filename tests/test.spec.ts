@@ -1,9 +1,10 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/TaskEither";
-import { testMigrations, Context } from "../lib";
-import { createSqlLiteClient, queryAll, queryExec } from "./db";
-import { testTaskEither } from "./jest";
 import { expectLeftTaskEither } from "jest-fp-ts-matchers";
+import { afterAll, describe, expect, test } from "vitest";
+import { Context, testMigrations } from "../lib";
+import { createSqlLiteClient, queryAll, queryExec } from "./db";
+import { testTaskEither } from "./helpers";
 
 describe("Check", () => {
   const db = createSqlLiteClient(":memory:");

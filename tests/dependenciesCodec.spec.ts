@@ -1,6 +1,7 @@
 import { getOrElseW } from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import * as t from "io-ts";
+import { describe, expect, test } from "vitest";
 import { DependenciesFile } from "../lib/dependencies";
 
 /**

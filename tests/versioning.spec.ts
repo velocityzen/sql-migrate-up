@@ -1,12 +1,13 @@
-import * as T from "fp-ts/Task";
 import { pipe } from "fp-ts/function";
+import * as T from "fp-ts/Task";
 import * as TE from "fp-ts/TaskEither";
+import { expectRightTaskEither } from "jest-fp-ts-matchers";
+import { afterAll, describe, expect, test } from "vitest";
 import { Context, migrateUp } from "../lib";
 import { MigrationRow } from "../lib/types";
 import { version } from "../package.json";
 import { createSqlLiteClient, queryAll, queryExec } from "./db";
-import { testTaskEither } from "./jest";
-import { expectRightTaskEither } from "jest-fp-ts-matchers";
+import { testTaskEither } from "./helpers";
 
 describe("Versioning", () => {
   const db = createSqlLiteClient(":memory:");

@@ -1,6 +1,7 @@
 /*  eslint-disable @typescript-eslint/no-confusing-void-expression */
 import { pipe } from "fp-ts/function";
 import { expectLeftEither, expectRightEither } from "jest-fp-ts-matchers";
+import { describe, expect, test } from "vitest";
 import { applyTemplateData } from "../lib/template";
 
 describe("template", () => {

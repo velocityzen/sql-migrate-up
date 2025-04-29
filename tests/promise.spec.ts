@@ -1,3 +1,4 @@
+import { afterAll, describe, expect, test } from "vitest";
 import { ContextPromise, migrateUpPromise } from "../lib";
 import { MigrationRow } from "../lib/types";
 import { createSqlLiteClient } from "./db";
