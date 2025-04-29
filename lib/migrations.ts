@@ -339,7 +339,7 @@ function applyMigrationWith(
             () =>
               execute(`
                 insert into ${getTable(schema, table)}
-                values ('${filePath}', ${now ? now : "CURRENT_TIMESTAMP"});
+                values ('${filePath}', ${now ?? "CURRENT_TIMESTAMP"});
               `),
           ),
         ),

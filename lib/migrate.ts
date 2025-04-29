@@ -88,7 +88,7 @@ function saveVersion({
 }: ContextUseVersioning): TE.TaskEither<Error, void> {
   return execute(`
     insert into ${getTable(schema, table)}
-    values ('version-${version}', ${now ? now : "CURRENT_TIMESTAMP"});
+    values ('version-${version}', ${now ?? "CURRENT_TIMESTAMP"});
   `);
 }
 
