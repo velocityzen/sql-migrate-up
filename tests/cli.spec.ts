@@ -1,15 +1,15 @@
 import { pipe } from "fp-ts/function";
-import * as TE from "fp-ts/TaskEither";
 import * as REC from "fp-ts/Record";
+import * as TE from "fp-ts/TaskEither";
 import { describe, expect, test } from "vitest";
-import { Options } from "../lib/types";
-import { createSqlLiteClient, queryAll, queryExec } from "./db";
 import {
-  getCLIOptions,
+  getCliOptions,
   MIGRATIONS_FOLDER,
   MIGRATIONS_SCHEMA,
   MIGRATIONS_TABLE,
 } from "../lib/options";
+import { CliOptions, Options } from "../lib/types";
+import { createSqlLiteClient, queryAll, queryExec } from "./db";
 
 describe("CLI", () => {
   const db = createSqlLiteClient(":memory:");
@@ -20,9 +20,9 @@ describe("CLI", () => {
     execute: (sql) => pipe(db, queryExec(sql), TE.fromEither),
   };
 
-  const getDefaultCLIOptions = (options: Options) =>
+  const getDefaultCLIOptions = (options: CliOptions) =>
     pipe(
-      getCLIOptions(options),
+      getCliOptions(options),
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       REC.map(({ defaultValue }) => defaultValue)
     );
@@ -46,7 +46,6 @@ describe("CLI", () => {
         table: "default_table",
         folder: "default_folder",
         useVersioning: true,
-        force: true,
       })
     ).toStrictEqual({
       schemaOption: "default_schema",
@@ -54,7 +53,7 @@ describe("CLI", () => {
       folderOption: "default_folder",
       runOption: false,
       useVersioningOption: true,
-      forceOption: true,
+      forceOption: false,
     });
   });
 });

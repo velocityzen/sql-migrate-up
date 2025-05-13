@@ -1,17 +1,16 @@
 import { Option } from "commander";
-import { Options } from "./types";
+import { CliOptions } from "./types";
 
 export const MIGRATIONS_SCHEMA = "public";
 export const MIGRATIONS_TABLE = "migrations";
 export const MIGRATIONS_FOLDER = "./migrations";
 
-export function getCLIOptions({
+export function getCliOptions({
   table,
   folder,
   schema,
   useVersioning,
-  force,
-}: Options) {
+}: CliOptions) {
   const schemaOption = new Option(
     "--schema <string>",
     "schema to migrate"
@@ -40,7 +39,7 @@ export function getCLIOptions({
   const forceOption = new Option(
     "--force",
     "force run migration with the same version"
-  ).default(force ?? false);
+  ).default(false);
 
   return {
     schemaOption,

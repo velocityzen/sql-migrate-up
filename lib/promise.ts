@@ -55,18 +55,17 @@ function optionsCommonPromiseAdapter({
   };
 }
 
-export type OptionsPromise = OptionsCommonPromise & {
+export type CliOptionsPromise = OptionsCommonPromise & {
   version?: string;
   useVersioning?: boolean;
-  force?: boolean;
 };
 
 export function cliPromise(
-  { version, useVersioning, force, ...options }: OptionsPromise,
-  parserOptions?: ParserOptions,
+  { version, useVersioning, ...options }: CliOptionsPromise,
+  parserOptions?: ParserOptions
 ) {
   pipe(options, optionsCommonPromiseAdapter, (options) => {
-    cli({ ...options, version, useVersioning, force }, parserOptions);
+    cli({ ...options, version, useVersioning }, parserOptions);
   });
 }
 
@@ -87,7 +86,7 @@ export async function migrateUpPromise(
     force,
     ...context
   }: ContextPromise,
-  onMigrationApplied?: (fileName: string) => void,
+  onMigrationApplied?: (fileName: string) => void
 ) {
   const migrate = migrateUp(
     {
@@ -102,7 +101,7 @@ export async function migrateUpPromise(
           IO.of(() => {
             onMigrationApplied(fileName);
           })
-      : undefined,
+      : undefined
   );
   const result = await migrate();
 

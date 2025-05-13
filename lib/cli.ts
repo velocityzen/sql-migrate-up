@@ -9,11 +9,11 @@ import { version } from "../package.json";
 import { createActionFor } from "./commander";
 import { createMigration, CreateMigrationContext } from "./create";
 import { migrateUp } from "./migrate";
-import { getCLIOptions } from "./options";
+import { getCliOptions } from "./options";
 import { testMigrations } from "./test";
-import { MigrationsContext, Options } from "./types";
+import { CliOptions, MigrationsContext } from "./types";
 
-export function cli(options: Options, parserOptions?: ParserOptions) {
+export function cli(options: CliOptions, parserOptions?: ParserOptions) {
   const {
     schemaOption,
     tableOption,
@@ -21,7 +21,7 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
     runOption,
     useVersioningOption,
     forceOption,
-  } = getCLIOptions(options);
+  } = getCliOptions(options);
 
   program.name(options.name ?? "migrate").version(options.version ?? version);
 
@@ -40,11 +40,11 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
             TE.of({ ...options, ...context }),
             TE.tapIO(({ schema }) =>
               C.info(
-                `Appling migrations ${schema !== null ? `to schema "${schema}"` : ""}`,
-              ),
+                `Appling migrations ${schema !== null ? `to schema "${schema}"` : ""}`
+              )
             ),
             TE.flatMap((context) =>
-              migrateUp(context, (name) => C.info(`> ${name}`)),
+              migrateUp(context, (name) => C.info(`> ${name}`))
             ),
             TE.tapIO(
               flow(
@@ -53,10 +53,10 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
                   () => C.info("No migrations to run. DB is up to date."),
                   (totalMigrationsApplied) =>
                     C.info(
-                      `${totalMigrationsApplied} migrations applied. DB is up to date.`,
-                    ),
-                ),
-              ),
+                      `${totalMigrationsApplied} migrations applied. DB is up to date.`
+                    )
+                )
+              )
             ),
             T.tap(() =>
               pipe(
@@ -65,13 +65,13 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
                 O.match(
                   // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
                   () => T.of(constVoid()),
-                  (end) => end(),
-                ),
-              ),
-            ),
+                  (end) => end()
+                )
+              )
+            )
           ),
-        "Failed to run migration",
-      ),
+        "Failed to run migration"
+      )
     );
 
   program
@@ -85,13 +85,13 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
           TE.of({ ...options, ...context }),
           TE.tapIO(({ schema }) =>
             C.info(
-              `Checking migrations ${schema !== null ? `for schema "${schema}"` : ""}`,
-            ),
+              `Checking migrations ${schema !== null ? `for schema "${schema}"` : ""}`
+            )
           ),
           TE.flatMap((context) => testMigrations(context, parserOptions)),
-          TE.tapIO(() => C.info("Clean")),
-        ),
-      ),
+          TE.tapIO(() => C.info("Clean"))
+        )
+      )
     );
 
   program
@@ -108,12 +108,12 @@ export function cli(options: Options, parserOptions?: ParserOptions) {
           pipe(
             createMigration(context, name.join(" ")),
             TE.tapIO((newMigrationName) =>
-              C.info(`New migration has been created at: ${newMigrationName}`),
+              C.info(`New migration has been created at: ${newMigrationName}`)
             ),
-            TE.asUnit,
+            TE.asUnit
           ),
-        "Failed to create migration",
-      ),
+        "Failed to create migration"
+      )
     );
 
   program.parse();

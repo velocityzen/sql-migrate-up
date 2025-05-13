@@ -32,6 +32,7 @@ export interface OptionsCommon extends Partial<MigrationsContext>, DbContext {
 }
 
 export type Options = OptionsCommon & Partial<OptionsUseVersioning>;
+export type CliOptions = Omit<Options, "force">;
 
 export interface ContextCommon
   extends MigrationsContext,
