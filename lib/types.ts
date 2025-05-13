@@ -26,20 +26,17 @@ export interface OptionsUseVersioning {
   force: boolean;
 }
 
-export interface OptionsVersion {
-  version?: string;
-}
-
 export interface OptionsCommon extends Partial<MigrationsContext>, DbContext {
   name?: string;
   end?: () => T.Task<void>;
 }
 
-export type Options = OptionsCommon & (OptionsVersion | OptionsUseVersioning);
+export type Options = OptionsCommon & Partial<OptionsUseVersioning>;
+export type CliOptions = Omit<Options, "force">;
 
 export interface ContextCommon
   extends MigrationsContext,
-    OptionsVersion,
+    Pick<Options, "version">,
     DbContext {}
 
 export interface ContextUseVersioning
@@ -50,7 +47,7 @@ export interface ContextUseVersioning
 export type Context = ContextCommon | ContextUseVersioning;
 
 export function useVersioning(
-  context: Context,
+  context: Context
 ): context is ContextUseVersioning {
   return "useVersioning" in context && context.useVersioning && !context.force;
 }
